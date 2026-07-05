@@ -30,13 +30,15 @@ CouncilQ is a single-agent, RAG-based AI assistant for the City of Adelaide. It 
 
 For every skill:
 
-1. Create `evals/input.json`.
-2. Create `evals/expected_tools.json`.
-3. Create `evals/expected_output.json`.
-4. Review the eval contract.
-5. Create `SKILL.md`.
-6. Add `scripts/`, `references/`, `assets/`, `tests/`, and `evals/`.
+1. Choose one skill.
+2. Write `evals/input.json`.
+3. Write `evals/expected_tools.json`.
+4. Write `evals/expected_output.json`.
+5. Then write `SKILL.md` using the Day 3 page 46 template.
+6. Then add `scripts/`, `references/`, and `assets/`.
 7. Run evals before accepting the skill.
+
+This order is mandatory. Do not create or revise `SKILL.md` for a new skill until the three eval files exist and have been reviewed as the skill contract.
 
 ## Skill Structure
 
@@ -51,18 +53,21 @@ skill_name/
 ├── ...
 ```
 
-CouncilQ may add `tests/` and `evals/` as extra folders, but they must not replace the canonical Day 3 folders.
+CouncilQ adds `evals/` because every skill is evaluation-first. `tests/` may be added for deterministic helper code, but it is not part of the Day 3 canonical minimum.
 
 CouncilQ skill folder:
 
 ```text
 skill_name/
+├── evals/
+│   ├── input.json
+│   ├── expected_tools.json
+│   └── expected_output.json
 ├── SKILL.md
 ├── scripts/
 ├── references/
 ├── assets/
-├── tests/
-└── evals/
+└── tests/  # optional, deterministic helper tests only
 ```
 
 ## First MVP Skill
