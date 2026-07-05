@@ -34,10 +34,22 @@ CouncilQ/agent.py
 
 This is the only ADK agent file. Helper modules live under `CouncilQ/app/`.
 
+Create a local `.env` file before chatting with the agent:
+
+```powershell
+cd C:\Users\ramif\OneDrive\Documents\GitHub\CouncilQ
+copy .env.example .env
+```
+
+Then edit `.env` and add either:
+
+- `GOOGLE_API_KEY` from Google AI Studio, with `GOOGLE_GENAI_USE_VERTEXAI=FALSE`
+- or Vertex AI settings, with `GOOGLE_GENAI_USE_VERTEXAI=TRUE`
+
 Run ADK from the parent directory of `CouncilQ`:
 
 ```powershell
-cd C:\Users\ramif\Documents\Codex\2026-07-05\d
+cd C:\Users\ramif\OneDrive\Documents\GitHub
 adk web
 ```
 
@@ -66,6 +78,8 @@ CouncilQ is a project wrapper around a Day 3 Agent Skills library. Each reusable
 ```text
 CouncilQ/
 |-- agent.py
+|-- config.py
+|-- .env.example
 |-- AGENTS.md
 |-- .agents-cli-spec.md
 |-- pyproject.toml

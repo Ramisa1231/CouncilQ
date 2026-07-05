@@ -1,6 +1,7 @@
 from google.adk.agents import Agent
 
 from app.tools import answer_council_question, inspect_skill_registry
+from config import MODEL
 
 
 COUNCILQ_INSTRUCTION = """
@@ -20,7 +21,7 @@ You must follow the CouncilQ skill library:
 
 root_agent = Agent(
     name="councilq",
-    model="gemini-flash-latest",
+    model=MODEL,
     instruction=COUNCILQ_INSTRUCTION,
     tools=[
         inspect_skill_registry,
