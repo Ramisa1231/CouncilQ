@@ -107,6 +107,9 @@ def respond_to_request(node_input: dict[str, Any]) -> Iterator[Event]:
 
     if status == "clarification_required":
         answer = retrieval.get("message", "Please provide a little more detail so I can answer safely.")
+        source_lines = _format_sources(retrieval.get("sources", []))
+        if source_lines:
+            answer = f"{answer}\n\nSources:\n{source_lines}"
         yield from _final_text(answer, {"status": status, "policy": request.policy, "sources": retrieval.get("sources", [])})
         return
 
@@ -115,9 +118,7 @@ def respond_to_request(node_input: dict[str, Any]) -> Iterator[Event]:
         yield from _final_text(answer, {"status": "unsupported", "policy": request.policy, "sources": []})
         return
 
-    source_lines = "\n".join(
-        f"- {source['title']}: {source['url']}" for source in retrieval["sources"]
-    )
+    source_lines = _format_sources(retrieval["sources"])
     answer = (
         f"{retrieval['message']}\n\n"
         "Use the linked City of Adelaide source to confirm the latest details before acting.\n\n"
@@ -171,6 +172,10 @@ def _extract_text(node_input: Any) -> str:
         )
 
     return str(node_input)
+
+
+def _format_sources(sources: list[dict[str, str]]) -> str:
+    return "\n".join(f"- {source['title']}: {source['url']}" for source in sources)
 
 
 def _final_text(text: str, output: dict[str, Any]) -> Iterator[Event]:
