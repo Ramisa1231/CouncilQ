@@ -18,8 +18,8 @@ CouncilQ currently contains:
 - Product specs, requirements, user stories, and an eval plan.
 - First service skill: `waste_and_recycling`.
 - First governance skill: `policy_guard`.
-- Google ADK discovery entry point: `agent.py`.
-- ADK implementation files under `app/`.
+- Google ADK entry point: `agent.py`.
+- Helper implementation files under `app/`.
 - Deterministic tests for policy, source lookup, and skill registry loading.
 
 The current implementation is a read-only MVP foundation. It loads the skill registry, applies deterministic policy checks, and returns trusted City of Adelaide source links for the first waste-and-recycling cases.
@@ -32,11 +32,7 @@ ADK discovers CouncilQ through the root-level file:
 CouncilQ/agent.py
 ```
 
-That file re-exports the real ADK agent from:
-
-```text
-CouncilQ/app/agent.py
-```
+This is the only ADK agent file. Helper modules live under `CouncilQ/app/`.
 
 Run ADK from the parent directory of `CouncilQ`:
 
@@ -74,7 +70,6 @@ CouncilQ/
 |-- .agents-cli-spec.md
 |-- pyproject.toml
 |-- app/
-|   |-- agent.py
 |   |-- tools.py
 |   |-- policy.py
 |   |-- rag.py
