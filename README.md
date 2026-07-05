@@ -20,7 +20,7 @@ This repository currently contains the project foundation:
 - Evaluation plan.
 - First service skill scaffold: `waste_and_recycling`.
 - First governance skill scaffold: `policy_guard`.
-- Google ADK app entry point in `app/agent.py`.
+- Google ADK entry point in `agent.py`, backed by implementation files in `app/`.
 
 The current implementation is a read-only MVP foundation. It loads the skill registry, applies deterministic policy checks, and returns trusted City of Adelaide source links for the first waste-and-recycling cases.
 
@@ -94,5 +94,8 @@ pytest
 Run with ADK tooling once the environment is configured:
 
 ```powershell
+cd C:\Users\ramif\Documents\Codex\2026-07-05\d
 adk web
 ```
+
+Then select `CouncilQ` in the ADK web UI.
