@@ -25,17 +25,44 @@ No production agent implementation has been added yet. That is intentional: Coun
 
 ## Project Structure
 
+CouncilQ is a project wrapper around a Day 3 Agent Skills library. Each reusable capability must be a skill folder using the canonical Day 3 structure.
+
 ```text
 CouncilQ/
 ├── AGENTS.md
 ├── .agents-cli-spec.md
 ├── specs/
-├── policies/
 ├── skills/
-│   └── waste_and_recycling/
+│   ├── README.md
+│   ├── waste_and_recycling/
+│   │   ├── SKILL.md
+│   │   ├── scripts/
+│   │   ├── references/
+│   │   ├── assets/
+│   │   ├── tests/
+│   │   └── evals/
+│   └── policy_guard/
+│       ├── SKILL.md
+│       ├── scripts/
+│       ├── references/
+│       ├── assets/
+│       ├── tests/
+│       └── evals/
+├── policies/
 ├── tests/
 ├── evals/
 └── app/
+```
+
+Canonical Day 3 skill structure:
+
+```text
+skill_name/
+├── SKILL.md
+├── scripts/
+├── references/
+├── assets/
+├── ...
 ```
 
 ## Next Build Step
@@ -48,4 +75,3 @@ Create the deterministic foundation for:
 - RAG ingestion metadata.
 
 Then scaffold the ADK prototype and wire the first read-only retrieval flow.
-

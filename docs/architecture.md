@@ -24,6 +24,5 @@ flowchart TD
 - Single agent by default.
 - Skills provide modular procedural knowledge.
 - Retrieval provides factual grounding.
-- Policies are centralized.
+- Policy checks are implemented as a reusable `policy_guard` skill.
 - Evals define behavior before implementation.
-

@@ -40,7 +40,20 @@ For every skill:
 
 ## Skill Structure
 
-Each skill folder uses:
+Each skill folder must start with the Day 3 canonical structure:
+
+```text
+skill_name/
+├── SKILL.md
+├── scripts/
+├── references/
+├── assets/
+├── ...
+```
+
+CouncilQ may add `tests/` and `evals/` as extra folders, but they must not replace the canonical Day 3 folders.
+
+CouncilQ skill folder:
 
 ```text
 skill_name/
@@ -54,7 +67,8 @@ skill_name/
 
 ## First MVP Skill
 
-`skills/waste_and_recycling/`
+- `skills/waste_and_recycling/`
+- `skills/policy_guard/`
 
 The first repetitive workflow is City of Adelaide waste and recycling question answering.
 
@@ -73,4 +87,3 @@ Before tool execution:
 - Use pytest for deterministic helper code.
 - Do not use pytest to assert exact LLM answer text.
 - Use evals for behavior, routing, source grounding, and tool trajectory.
-
