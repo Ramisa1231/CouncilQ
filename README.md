@@ -22,7 +22,23 @@ CouncilQ currently contains:
 - Helper implementation files under `app/`.
 - Deterministic tests for policy, source lookup, and skill registry loading.
 
-The current implementation is a read-only MVP foundation. It loads the skill registry, applies deterministic policy checks, and returns trusted City of Adelaide source links for the first waste-and-recycling cases.
+The current implementation is a read-only MVP foundation. It runs as an ADK 2.0 graph workflow: classify the request, apply policy checks, retrieve trusted City of Adelaide source metadata, then render a final answer. This is the first incremental step toward the Google ambient-agent codelab architecture while keeping CouncilQ as one general-purpose agent.
+
+## Codelab Alignment
+
+CouncilQ now uses the same broad building blocks as the codelab's graph-based agent core:
+
+- ADK `Workflow` as the root agent.
+- Function nodes for deterministic classification, policy screening, retrieval, and response rendering.
+- Conditional edges using route values.
+- A policy checkpoint before retrieval.
+
+Next increments:
+
+1. Add an LLM answer-review node with a Pydantic `output_schema`.
+2. Add human review with ADK `RequestInput` for actions that need approval.
+3. Add an ambient FastAPI trigger for council-service events.
+4. Add `agents-cli eval` datasets for end-to-end behavior grading.
 
 ## ADK Setup
 
@@ -87,6 +103,7 @@ CouncilQ/
 |-- pyproject.toml
 |-- app/
 |   |-- tools.py
+|   |-- workflow_nodes.py
 |   |-- policy.py
 |   |-- rag.py
 |   |-- skills.py
