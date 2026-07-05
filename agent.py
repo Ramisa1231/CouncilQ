@@ -1,7 +1,7 @@
 from google.adk.agents import Agent
 
-from app.tools import answer_council_question, inspect_skill_registry
-from config import MODEL
+from .app.tools import answer_council_question, inspect_skill_registry
+from .config import MODEL
 
 
 COUNCILQ_INSTRUCTION = """
