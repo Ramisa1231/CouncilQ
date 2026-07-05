@@ -46,6 +46,8 @@ Then edit `.env` and add either:
 - `GOOGLE_API_KEY` from Google AI Studio, with `GOOGLE_GENAI_USE_VERTEXAI=FALSE`
 - or Vertex AI settings, with `GOOGLE_GENAI_USE_VERTEXAI=TRUE`
 
+The default model is `gemini-2.0-flash`. If ADK records a user event but produces no model response, check the terminal running `adk web` for model or authentication errors before changing code.
+
 Run ADK from the parent directory of `CouncilQ`:
 
 ```powershell
