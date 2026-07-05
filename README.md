@@ -40,6 +40,52 @@ Next increments:
 3. Add an ambient FastAPI trigger for council-service events.
 4. Add `agents-cli eval` datasets for end-to-end behavior grading.
 
+## Architecture
+
+CouncilQ uses a single-agent architecture. The diagram below mirrors the implemented workflow in the repository: user request classification, policy screening, retrieval, and response generation with clear branching for blocked, human-approval, and continue paths. A secondary swimlane shows planned next increments.
+
+```mermaid
+flowchart LR
+	subgraph user_flow [User -> Agent]
+		U["User request"] --> C[classify_request<br/><i>classify user intent</i>]
+	end
+
+	subgraph core_agent [CouncilQ ADK agent]
+		direction TB
+		C --> S["respond_with_skills<br/>(skill registry)"]
+		C --> P["policy_screen<br/>(Policy & Safety Guard)"]
+
+		P --> PS1["structural_policy_check"]
+		PS1 --> PS2["semantic_policy_check"]
+		PS2 --> DEC{"Decision"}
+
+		DEC -->|blocked| RB["respond_blocked<br/>(Policy blocked)"]
+		DEC -->|requires_human_approval| RH["respond_requires_human_approval<br/>(Human approval)"]
+		DEC -->|continue| RET["retrieve_sources<br/>(RAG matcher & trusted sources)"]
+
+		RET -->|answered| RA["respond_answered<br/>(Answer with sources)"]
+		RET -->|clarification_required| RC["respond_clarification_required<br/>(Ask for clarification)"]
+		RET -->|unsupported| RU["respond_unsupported<br/>(AI unsupported)"]
+	end
+
+	%% show connections to final responses
+	RB --> OUT1["User response"]
+	RH --> OUT2["User response"]
+	RA --> OUT3["User response"]
+	RC --> OUT4["User response"]
+	RU --> OUT5["User response"]
+
+	%% Next increments (roadmap)
+	subgraph next [Next increments]
+		direction LR
+		A1["LLM Answer Review<br/>(Pydantic output_schema)"]
+		A2["ADK RequestInput<br/>(Human review & approval)"]
+		A3["FastAPI Ambient Trigger<br/>(HTTP/webhook ingestion)"]
+		A4["agents-cli Eval<br/>(automated evaluation & regression)"]
+		A1 --> A2 --> A3 --> A4
+	end
+```
+
 ## ADK Setup
 
 ADK discovers CouncilQ through the root-level file:
