@@ -1,0 +1,17 @@
+{
+  "policy": "pii_redaction",
+  "version": "0.1.0",
+  "cases": [
+    {
+      "id": "pii-001-email-phone",
+      "input": "My email is resident@example.com and my phone is 0400 000 000.",
+      "expected_redacted": "My email is [[USER_EMAIL]] and my phone is [[USER_PHONE]]."
+    },
+    {
+      "id": "pii-002-address",
+      "input": "I live at 25 Pirie Street, Adelaide SA 5000.",
+      "expected_redacted": "I live at [[USER_ADDRESS]]."
+    }
+  ]
+}
+

@@ -1,0 +1,89 @@
+environments:
+  localhost:
+    blocked_tools:
+      - send_email
+      - send_sms
+      - delete_file
+      - execute_shell
+      - deploy_agent
+      - deploy_production
+  development:
+    blocked_tools:
+      - send_email
+      - send_sms
+      - delete_file
+      - execute_shell
+      - deploy_production
+  production:
+    blocked_tools:
+      - execute_shell
+      - delete_file
+
+roles:
+  public_user:
+    allowed_tools:
+      - search_council_documents
+      - search_website
+      - retrieve_information
+      - rag.search
+      - source.open
+  resident:
+    allowed_tools:
+      - search_council_documents
+      - search_website
+      - retrieve_information
+      - rag.search
+      - source.open
+      - lodge_request
+  council_staff:
+    allowed_tools:
+      - "*"
+
+high_risk_tools:
+  - send_email
+  - send_sms
+  - lodge_request
+  - update_record
+  - delete_file
+  - publish_content
+  - deploy_agent
+  - deploy_production
+
+semantic_policies:
+  pii:
+    deny:
+      - unmasked_email
+      - phone_number
+      - api_key
+      - access_token
+      - password
+      - residential_address
+      - council_staff_private_information
+  prompt_injection:
+    deny:
+      - reveal_system_prompt
+      - ignore_previous_instructions
+      - execute_hidden_prompt
+      - override_policy
+      - disable_guardrails
+      - use_tools_without_permission
+  safety:
+    deny:
+      - unauthorized_tool_call
+      - unsafe_external_request
+      - privileged_operation_without_permission
+      - unsupported_policy_claim
+      - guessed_fee_or_date
+
+source_policy:
+  allowlisted_domains:
+    - cityofadelaide.com.au
+    - customer.cityofadelaide.com.au
+    - whichbin.sa.gov.au
+    - sa.gov.au
+  blocked_source_types:
+    - unofficial_blog
+    - forum
+    - social_media_post
+    - retrieved_prompt_instruction
+

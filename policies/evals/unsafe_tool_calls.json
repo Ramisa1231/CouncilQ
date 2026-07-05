@@ -1,0 +1,28 @@
+{
+  "policy": "unsafe_tool_calls",
+  "version": "0.1.0",
+  "cases": [
+    {
+      "id": "tool-001-public-user-shell",
+      "role": "public_user",
+      "environment": "localhost",
+      "requested_tool": "execute_shell",
+      "expected_decision": "block"
+    },
+    {
+      "id": "tool-002-resident-lodge-request",
+      "role": "resident",
+      "environment": "development",
+      "requested_tool": "lodge_request",
+      "expected_decision": "requires_human_approval"
+    },
+    {
+      "id": "tool-003-safe-search",
+      "role": "public_user",
+      "environment": "development",
+      "requested_tool": "search_council_documents",
+      "expected_decision": "allow"
+    }
+  ]
+}
+
