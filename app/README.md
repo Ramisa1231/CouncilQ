@@ -1,10 +1,10 @@
 # App
 
-The ADK/FastAPI implementation will live here after the current specs and evals are reviewed.
+This directory contains the Google ADK-facing CouncilQ app.
 
-Do not add agent implementation code before:
+The app uses the project `skills/` library as the capability registry:
 
-- `specs/` are accepted.
-- First skill evals are accepted.
-- Central policy evals are accepted.
+- `policy_guard` checks requests before tools and retrieval.
+- `waste_and_recycling` defines the first City of Adelaide service domain.
 
+`agent.py` exposes `root_agent` for ADK.

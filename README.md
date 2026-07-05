@@ -20,8 +20,9 @@ This repository currently contains the project foundation:
 - Evaluation plan.
 - First service skill scaffold: `waste_and_recycling`.
 - First governance skill scaffold: `policy_guard`.
+- Google ADK app entry point in `app/agent.py`.
 
-No production agent implementation has been added yet. That is intentional: CouncilQ requires specs and evals before code.
+The current implementation is a read-only MVP foundation. It loads the skill registry, applies deterministic policy checks, and returns trusted City of Adelaide source links for the first waste-and-recycling cases.
 
 ## Project Structure
 
@@ -83,11 +84,15 @@ CouncilQ skill creation order:
 
 ## Next Build Step
 
-Create the deterministic foundation for:
+Install project dependencies in your preferred Python environment, then run deterministic tests:
 
-- Source allowlisting.
-- PII masking.
-- Policy decision types.
-- RAG ingestion metadata.
+```powershell
+pip install -e ".[dev]"
+pytest
+```
 
-Then scaffold the ADK prototype and wire the first read-only retrieval flow.
+Run with ADK tooling once the environment is configured:
+
+```powershell
+adk web
+```
