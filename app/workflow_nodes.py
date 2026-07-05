@@ -134,6 +134,26 @@ def respond_to_request(node_input: dict[str, Any]) -> Iterator[Event]:
     )
 
 
+def respond_blocked(node_input: dict[str, Any]) -> Iterator[Event]:
+    yield from respond_to_request(node_input)
+
+
+def respond_requires_human_approval(node_input: dict[str, Any]) -> Iterator[Event]:
+    yield from respond_to_request(node_input)
+
+
+def respond_answered(node_input: dict[str, Any]) -> Iterator[Event]:
+    yield from respond_to_request(node_input)
+
+
+def respond_clarification_required(node_input: dict[str, Any]) -> Iterator[Event]:
+    yield from respond_to_request(node_input)
+
+
+def respond_unsupported(node_input: dict[str, Any]) -> Iterator[Event]:
+    yield from respond_to_request(node_input)
+
+
 def _extract_text(node_input: Any) -> str:
     if isinstance(node_input, str):
         return node_input
