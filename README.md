@@ -37,21 +37,7 @@ CouncilQ now uses the same broad building blocks as the codelab's graph-based ag
 
 Current graph:
 
-```text
-START
-  -> normalize_event
-  -> classify_request
-     |-- skills -> respond_with_skills
-     `-- council_question -> policy_screen
-          |-- blocked -> respond_blocked
-          |-- requires_human_approval -> request_human_approval
-          |     |-- human_approved -> respond_human_approved
-          |     `-- human_rejected -> respond_human_rejected
-          `-- continue -> retrieve_sources
-                |-- answered -> respond_answered
-                |-- clarification_required -> respond_clarification_required
-                `-- unsupported -> respond_unsupported
-```
+![CouncilQ stateful ADK workflow](docs/councilq-stateful-workflow.png)
 
 Next increments:
 
