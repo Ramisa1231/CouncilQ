@@ -1,57 +1,53 @@
- # Architecture
+# Architecture
 
- CouncilQ uses a single-agent architecture. The diagram below mirrors the implemented MVP workflow in the repository: user request classification, policy screening, deterministic trusted-source routing for waste/recycling, and response generation with clear branching for blocked, human-approval, and continue paths. A secondary swimlane shows planned next increments.
+CouncilQ uses a single-agent ADK 2.0 workflow with modular Day 3 skills. The graph normalizes incoming chat or event payloads, classifies the request, applies policy checks, routes to deterministic trusted-source support for the current MVP, and renders a grounded response.
 
- ```mermaid
- flowchart LR
-   subgraph user_flow [User -> Agent]
-     U["User request"] --> C[classify_request<br/><i>classify user intent</i>]
-   end
+```mermaid
+flowchart LR
+  subgraph input [Input]
+    U["User request or JSON event"] --> N["normalize_event<br/><i>chat, plain JSON, or base64 data</i>"]
+  end
 
-   subgraph core_agent [CouncilQ ADK agent]
-     direction TB
-     C --> S["respond_with_skills<br/>(skill registry)"]
-     C --> P["policy_screen<br/>(Policy & Safety Guard)"]
+  subgraph workflow [CouncilQ ADK Workflow]
+    direction TB
+    N --> C["classify_request<br/><i>intent routing</i>"]
+    C -->|skills| S["respond_with_skills"]
+    C -->|council_question| P["policy_screen<br/><i>policy_guard</i>"]
 
-     P --> PS1["structural_policy_check"]
-     PS1 --> PS2["semantic_policy_check"]
-     PS2 --> DEC{"Decision"}
+    P -->|blocked| RB["respond_blocked"]
+    P -->|requires_human_approval| H["request_human_approval<br/><i>ADK RequestInput</i>"]
+    H -->|human_approved| HA["respond_human_approved"]
+    H -->|human_rejected| HR["respond_human_rejected"]
+    P -->|continue| RET["retrieve_sources<br/><i>deterministic source routing</i>"]
 
-     DEC -->|blocked| RB["respond_blocked<br/>(Policy blocked)"]
-     DEC -->|requires_human_approval| RH["respond_requires_human_approval<br/>(Human approval)"]
-     DEC -->|continue| RET["retrieve_sources<br/>(deterministic source routing)"]
+    RET -->|answered| RA["respond_answered"]
+    RET -->|clarification_required| RC["respond_clarification_required"]
+    RET -->|unsupported| RU["respond_unsupported"]
+  end
 
-     RET -->|answered| RA["respond_answered<br/>(Answer with sources)"]
-     RET -->|clarification_required| RC["respond_clarification_required<br/>(Ask for clarification)"]
-     RET -->|unsupported| RU["respond_unsupported<br/>(AI unsupported)"]
-   end
+  RB --> OUT1["User response"]
+  HA --> OUT2["User response"]
+  HR --> OUT3["User response"]
+  RA --> OUT4["User response"]
+  RC --> OUT5["User response"]
+  RU --> OUT6["User response"]
 
-   %% show connections to final responses
-   RB --> OUT1["User response"]
-   RH --> OUT2["User response"]
-   RA --> OUT3["User response"]
-   RC --> OUT4["User response"]
-   RU --> OUT5["User response"]
+  subgraph roadmap [Next Increments]
+    direction LR
+    A1["LLM Answer Review<br/>(Pydantic output_schema)"]
+    A2["Expanded Council Domains<br/>(beyond waste/recycling)"]
+    A3["Deeper Retrieval Stack<br/>(semantic retrieval/ranking)"]
+    A4["LLM-graded Behavior Evals<br/>(beyond deterministic harness)"]
+    A1 --> A2 --> A3 --> A4
+  end
+```
 
-   %% Skill hints / notes
-   classDef skill fill:#e6ffed,stroke:#2d8a4d;
-   class S skill
+## Design Choices
 
-   %% Next increments (roadmap)
-   subgraph next [Next increments]
-     direction LR
-     A1["LLM Answer Review<br/>(Pydantic output_schema)"]
-     A2["Expanded Council Domains<br/>(beyond waste/recycling)"]
-     A3["Deeper Retrieval Stack<br/>(semantic retrieval/ranking)"]
-     A4["LLM-graded Behavior Evals<br/>(beyond deterministic harness)"]
-     A1 --> A2 --> A3 --> A4
-   end
- ```
-
- ## Design choices
-
- - Single agent by default; skills provide modular, testable procedures.
- - Current retrieval is deterministic trusted-source routing for MVP waste/recycling support.
- - Optional live page fetch is allowlisted and best-effort; if unavailable, CouncilQ falls back to curated trusted links.
- - A central policy guard performs structural and semantic checks and returns an explicit decision (block, requires_human_approval, sanitize_and_continue/continue).
- - Workflow is evaluation-first: specs, tests, and evals drive changes before implementation.
+- Single agent by default; skills provide modular, testable procedures.
+- `normalize_event` accepts chat text, plain JSON `data`, and base64 Pub/Sub-style `data`.
+- Current retrieval is deterministic trusted-source routing for MVP waste/recycling support.
+- Optional live page fetch is allowlisted and best-effort; if unavailable, CouncilQ falls back to curated trusted links.
+- `policy_screen` runs before retrieval or any higher-risk workflow branch.
+- Human approval uses ADK `RequestInput` and resumes through explicit approval/rejection routes.
+- Workflow changes are covered by deterministic pytest checks; broader conversational behavior belongs in `agents-cli eval`.

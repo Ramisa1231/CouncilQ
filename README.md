@@ -49,26 +49,25 @@ Roadmap increments after this MVP:
 
 ## Architecture
 
-CouncilQ uses a single-agent architecture. The diagram below mirrors the implemented workflow in the repository: user request classification, policy screening, retrieval, and response generation with clear branching for blocked, human-approval, and continue paths. A secondary swimlane shows planned next increments.
+CouncilQ uses a single-agent architecture. The diagram below mirrors the implemented stateful ADK workflow in the repository: event normalization, request classification, policy screening, retrieval, human approval, and response generation.
 
 ```mermaid
 flowchart LR
 	subgraph user_flow [User -> Agent]
-		U["User request"] --> C[classify_request<br/><i>classify user intent</i>]
+		U["User request or JSON event"] --> N["normalize_event<br/><i>chat, plain JSON, or base64 data</i>"]
 	end
 
 	subgraph core_agent [CouncilQ ADK agent]
 		direction TB
+		N --> C["classify_request<br/><i>classify user intent</i>"]
 		C --> S["respond_with_skills<br/>(skill registry)"]
 		C --> P["policy_screen<br/>(Policy & Safety Guard)"]
 
-		P --> PS1["structural_policy_check"]
-		PS1 --> PS2["semantic_policy_check"]
-		PS2 --> DEC{"Decision"}
-
-		DEC -->|blocked| RB["respond_blocked<br/>(Policy blocked)"]
-		DEC -->|requires_human_approval| RH["respond_requires_human_approval<br/>(Human approval)"]
-		DEC -->|continue| RET["retrieve_sources<br/>(RAG matcher & trusted sources)"]
+		P -->|blocked| RB["respond_blocked<br/>(Policy blocked)"]
+		P -->|requires_human_approval| H["request_human_approval<br/>(ADK RequestInput)"]
+		H -->|human_approved| HA["respond_human_approved"]
+		H -->|human_rejected| HR["respond_human_rejected"]
+		P -->|continue| RET["retrieve_sources<br/>(RAG matcher & trusted sources)"]
 
 		RET -->|answered| RA["respond_answered<br/>(Answer with sources)"]
 		RET -->|clarification_required| RC["respond_clarification_required<br/>(Ask for clarification)"]
@@ -77,10 +76,11 @@ flowchart LR
 
 	%% show connections to final responses
 	RB --> OUT1["User response"]
-	RH --> OUT2["User response"]
-	RA --> OUT3["User response"]
-	RC --> OUT4["User response"]
-	RU --> OUT5["User response"]
+	HA --> OUT2["User response"]
+	HR --> OUT3["User response"]
+	RA --> OUT4["User response"]
+	RC --> OUT5["User response"]
+	RU --> OUT6["User response"]
 
 	%% Next increments (roadmap)
 	subgraph next [Next increments]
