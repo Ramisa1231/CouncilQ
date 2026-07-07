@@ -29,16 +29,35 @@ The current implementation is a read-only MVP foundation. It runs as an ADK 2.0 
 CouncilQ now uses the same broad building blocks as the codelab's graph-based agent core:
 
 - ADK `Workflow` as the root agent.
+- A stateful `normalize_event` entry node that accepts chat text, plain JSON `data`, or base64 Pub/Sub-style `data`.
 - Function nodes for deterministic classification, policy screening, retrieval, and response rendering.
 - Conditional edges using route values.
 - A policy checkpoint before retrieval.
+- ADK `RequestInput` on the human-approval route.
+
+Current graph:
+
+```text
+START
+  -> normalize_event
+  -> classify_request
+     |-- skills -> respond_with_skills
+     `-- council_question -> policy_screen
+          |-- blocked -> respond_blocked
+          |-- requires_human_approval -> request_human_approval
+          |     |-- human_approved -> respond_human_approved
+          |     `-- human_rejected -> respond_human_rejected
+          `-- continue -> retrieve_sources
+                |-- answered -> respond_answered
+                |-- clarification_required -> respond_clarification_required
+                `-- unsupported -> respond_unsupported
+```
 
 Next increments:
 
 1. Add an LLM answer-review node with a Pydantic `output_schema`.
-2. Add human review with ADK `RequestInput` for actions that need approval.
-3. Add an ambient FastAPI trigger for council-service events.
-4. Add `agents-cli eval` datasets for end-to-end behavior grading.
+2. Add an ambient FastAPI trigger for council-service events.
+3. Add `agents-cli eval` datasets for end-to-end behavior grading.
 
 ## Architecture
 
