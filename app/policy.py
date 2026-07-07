@@ -45,7 +45,7 @@ ROLE_ALLOWED_TOOLS = {
 
 def mask_pii(text: str) -> tuple[str, list[str]]:
     redactions: list[str] = []
-    sanitized = re.sub(r"[\w.+-]+@[\w-]+\.[\w.-]+", "[[USER_EMAIL]]", text)
+    sanitized = re.sub(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b", "[[USER_EMAIL]]", text)
     if sanitized != text:
         redactions.append("[[USER_EMAIL]]")
     text = sanitized
@@ -134,4 +134,3 @@ def _remove_prompt_injection(text: str) -> str:
     for pattern in PROMPT_INJECTION_PATTERNS:
         sanitized = re.sub(re.escape(pattern), "", sanitized, flags=re.IGNORECASE)
     return re.sub(r"\s+", " ", sanitized).strip(" .")
-
