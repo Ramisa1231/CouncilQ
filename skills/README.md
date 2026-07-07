@@ -16,6 +16,12 @@ For every CouncilQ skill:
 
 The three eval files are the skill contract. They must exist before `SKILL.md` is written.
 
+Run deterministic contract checks from the repository root with:
+
+```text
+python -m evals.harness
+```
+
 Canonical skill folder:
 
 ```text

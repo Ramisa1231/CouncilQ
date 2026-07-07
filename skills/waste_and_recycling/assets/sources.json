@@ -1,0 +1,53 @@
+{
+  "sources": [
+    {
+      "id": "bin_collection",
+      "title": "City of Adelaide bin collection day checker",
+      "url": "https://www.cityofadelaide.com.au/resident/recycling-waste/bin-collection-day-checker/",
+      "keywords": [
+        "bin collected",
+        "bin collection",
+        "bin day",
+        "bin pickup",
+        "bin pick up",
+        "bins picked",
+        "picking my bins",
+        "when is my bin"
+      ],
+      "requires_location": true,
+      "message": "Bin collection days depend on the property address."
+    },
+    {
+      "id": "bin_requests",
+      "title": "City of Adelaide bin requests and issues",
+      "url": "https://www.cityofadelaide.com.au/resident/recycling-waste/bin-requests-and-issues/",
+      "keywords": ["missed bin", "not collected", "damaged bin", "lost bin", "stolen bin"],
+      "requires_location": false,
+      "message": "For missed, damaged, lost, or stolen bins, use the City of Adelaide bin requests and issues guidance."
+    },
+    {
+      "id": "hard_waste",
+      "title": "City of Adelaide hard waste collection for residents",
+      "url": "https://www.cityofadelaide.com.au/resident/recycling-waste/hard-waste-collection-for-residents/",
+      "keywords": ["hard waste", "mattress", "furniture", "old couch"],
+      "requires_location": false,
+      "message": "Hard waste guidance should be confirmed through the City of Adelaide hard waste collection page."
+    },
+    {
+      "id": "which_bin",
+      "title": "City of Adelaide Which Bin guidance",
+      "url": "https://www.cityofadelaide.com.au/resident/recycling-waste/which-bin/",
+      "keywords": ["which bin", "pizza box", "recycle", "recycling", "batteries", "dispose"],
+      "requires_location": false,
+      "message": "For item disposal questions, use City of Adelaide recycling guidance and Which Bin SA where linked."
+    },
+    {
+      "id": "which_bin_sa",
+      "title": "Which Bin SA",
+      "url": "https://www.whichbin.sa.gov.au/",
+      "keywords": ["which bin", "pizza box", "batteries", "dispose", "recycle"],
+      "requires_location": false,
+      "message": "Which Bin SA can help identify the correct disposal stream for common items."
+    }
+  ]
+}

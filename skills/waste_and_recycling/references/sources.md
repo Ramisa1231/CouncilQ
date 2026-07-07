@@ -1,6 +1,10 @@
 # Waste And Recycling Sources
 
-These sources are approved for the initial CouncilQ waste and recycling RAG corpus.
+These sources are approved for the initial CouncilQ waste and recycling MVP routing set.
+
+The structured source definitions used by runtime code are in:
+
+- `skills/waste_and_recycling/assets/sources.json`
 
 ## City of Adelaide
 
@@ -23,4 +27,3 @@ These sources are approved for the initial CouncilQ waste and recycling RAG corp
 - Cite the exact page used.
 - If a page redirects to a state government service, name that service clearly.
 - Do not ingest or cite unofficial blogs, forums, or social media posts for service rules.
-

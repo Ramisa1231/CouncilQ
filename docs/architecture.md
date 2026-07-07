@@ -1,6 +1,6 @@
  # Architecture
 
- CouncilQ uses a single-agent architecture. The diagram below mirrors the implemented workflow in the repository: user request classification, policy screening, retrieval, and response generation with clear branching for blocked, human-approval, and continue paths. A secondary swimlane shows planned next increments.
+ CouncilQ uses a single-agent architecture. The diagram below mirrors the implemented MVP workflow in the repository: user request classification, policy screening, deterministic trusted-source routing for waste/recycling, and response generation with clear branching for blocked, human-approval, and continue paths. A secondary swimlane shows planned next increments.
 
  ```mermaid
  flowchart LR
@@ -19,7 +19,7 @@
 
      DEC -->|blocked| RB["respond_blocked<br/>(Policy blocked)"]
      DEC -->|requires_human_approval| RH["respond_requires_human_approval<br/>(Human approval)"]
-     DEC -->|continue| RET["retrieve_sources<br/>(RAG matcher & trusted sources)"]
+     DEC -->|continue| RET["retrieve_sources<br/>(deterministic source routing)"]
 
      RET -->|answered| RA["respond_answered<br/>(Answer with sources)"]
      RET -->|clarification_required| RC["respond_clarification_required<br/>(Ask for clarification)"]
@@ -41,9 +41,9 @@
    subgraph next [Next increments]
      direction LR
      A1["LLM Answer Review<br/>(Pydantic output_schema)"]
-     A2["ADK RequestInput<br/>(Human review & approval)"]
-     A3["FastAPI Ambient Trigger<br/>(HTTP/webhook ingestion)"]
-     A4["agents-cli Eval<br/>(automated evaluation & regression)"]
+     A2["Expanded Council Domains<br/>(beyond waste/recycling)"]
+     A3["Deeper Retrieval Stack<br/>(semantic retrieval/ranking)"]
+     A4["LLM-graded Behavior Evals<br/>(beyond deterministic harness)"]
      A1 --> A2 --> A3 --> A4
    end
  ```
@@ -51,7 +51,7 @@
  ## Design choices
 
  - Single agent by default; skills provide modular, testable procedures.
- - Retrieval (RAG) supplies factual grounding from trusted City of Adelaide sources.
+ - Current retrieval is deterministic trusted-source routing for MVP waste/recycling support.
+ - Optional live page fetch is allowlisted and best-effort; if unavailable, CouncilQ falls back to curated trusted links.
  - A central policy guard performs structural and semantic checks and returns an explicit decision (block, requires_human_approval, sanitize_and_continue/continue).
  - Workflow is evaluation-first: specs, tests, and evals drive changes before implementation.
-

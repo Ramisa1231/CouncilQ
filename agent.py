@@ -16,7 +16,7 @@ from .app.workflow_nodes import (
 )
 
 
-COUNCILQ_DESCRIPTION = "Single-agent RAG workflow assistant for City of Adelaide services."
+COUNCILQ_DESCRIPTION = "Single-agent safety-first workflow assistant for City of Adelaide services."
 
 
 root_agent = Workflow(

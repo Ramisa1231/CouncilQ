@@ -1,6 +1,6 @@
 # CouncilQ
 
-CouncilQ is a single-agent, RAG-based AI assistant for the City of Adelaide.
+CouncilQ is a single-agent, safety-first AI assistant for City of Adelaide service questions.
 
 It follows the attached whitepaper guidance:
 
@@ -9,7 +9,7 @@ It follows the attached whitepaper guidance:
 - Evaluation-first skill development.
 - MCP/tool interoperability where appropriate.
 - Central policy checks for prompt injection, PII, and unsafe tool calls.
-- Trusted-source retrieval from City of Adelaide and government sources.
+- Trusted-source routing from City of Adelaide and government sources.
 
 ## Current Status
 
@@ -22,15 +22,17 @@ CouncilQ currently contains:
 - Helper implementation files under `app/`.
 - Deterministic tests for policy, source lookup, and skill registry loading.
 
-The current implementation is a read-only MVP foundation. It runs as an ADK 2.0 graph workflow: classify the request, apply policy checks, retrieve trusted City of Adelaide source metadata, then render a final answer. This is the first incremental step toward the Google ambient-agent codelab architecture while keeping CouncilQ as one general-purpose agent.
+The current implementation is a read-only MVP foundation. It runs as an ADK 2.0 graph workflow: classify the request, apply policy checks, route to trusted waste/recycling sources, and render a deterministic answer structure (answered, clarification_required, unsupported, or blocked).
+
+Today this is **not** a full semantic RAG system (no embeddings/vector index/chunk ranking yet). It is a safety-first workflow plus deterministic trusted-source routing, with an optional live fetch pass over allowlisted trusted pages.
 
 ## Codelab Alignment
 
-CouncilQ now uses the same broad building blocks as the codelab's graph-based agent core:
+CouncilQ uses the same broad building blocks as the codelab's graph-based agent core:
 
 - ADK `Workflow` as the root agent.
 - A stateful `normalize_event` entry node that accepts chat text, plain JSON `data`, or base64 Pub/Sub-style `data`.
-- Function nodes for deterministic classification, policy screening, retrieval, and response rendering.
+- Function nodes for deterministic classification, policy screening, trusted-source routing, and response rendering.
 - Conditional edges using route values.
 - A policy checkpoint before retrieval.
 - ADK `RequestInput` on the human-approval route.
@@ -39,11 +41,11 @@ Current graph:
 
 ![CouncilQ stateful ADK workflow](docs/councilq-stateful-workflow.png)
 
-Next increments:
+Roadmap increments after this MVP:
 
-1. Add an LLM answer-review node with a Pydantic `output_schema`.
-2. Add an ambient FastAPI trigger for council-service events.
-3. Add `agents-cli eval` datasets for end-to-end behavior grading.
+1. Add a richer answer-review layer with structured output checks.
+2. Expand retrieval depth beyond deterministic keyword/source routing.
+3. Add broader behavioral eval coverage as more skills are implemented.
 
 ## Architecture
 
@@ -84,9 +86,9 @@ flowchart LR
 	subgraph next [Next increments]
 		direction LR
 		A1["LLM Answer Review<br/>(Pydantic output_schema)"]
-		A2["ADK RequestInput<br/>(Human review & approval)"]
-		A3["FastAPI Ambient Trigger<br/>(HTTP/webhook ingestion)"]
-		A4["agents-cli Eval<br/>(automated evaluation & regression)"]
+		A2["Expanded Council Domains<br/>(beyond waste/recycling)"]
+		A3["Deeper Retrieval Stack<br/>(semantic retrieval/ranking)"]
+		A4["LLM-graded Behavior Evals<br/>(beyond deterministic harness)"]
 		A1 --> A2 --> A3 --> A4
 	end
 ```
@@ -140,6 +142,40 @@ py -m pip install -e ".[dev]"
 py -m pytest
 ```
 
+## Deterministic Skill Evals
+
+Run the skill eval harness against `skills/*/evals/{input,expected_tools,expected_output}.json`:
+
+```powershell
+python -m evals.harness
+```
+
+Or via the script entrypoint:
+
+```powershell
+councilq-eval
+```
+
+This harness validates deterministic behavior (policy decisions, tool trajectory constraints, required sources, and forbidden content checks) for the current MVP implementation.
+
+## Minimal FastAPI Surface
+
+CouncilQ now includes a narrow read-only API for the current assistant behavior.
+
+Run locally:
+
+```powershell
+uvicorn app.api:app --reload
+```
+
+Endpoints:
+
+- `GET /health`
+- `POST /ask` with JSON body:
+  - `question` (required)
+  - `council` (default: `City of Adelaide`)
+  - `fetch_live_pages` (default: `true`) for allowlisted trusted page fetch attempts
+
 ## Project Structure
 
 CouncilQ is a project wrapper around a Day 3 Agent Skills library. Each reusable capability must be a skill folder using the canonical Day 3 structure.
@@ -153,6 +189,7 @@ CouncilQ/
 |-- .agents-cli-spec.md
 |-- pyproject.toml
 |-- app/
+|   |-- api.py
 |   |-- tools.py
 |   |-- workflow_nodes.py
 |   |-- policy.py
@@ -171,6 +208,7 @@ CouncilQ/
 |   |   |-- scripts/
 |   |   |-- references/
 |   |   |-- assets/
+|   |   |   `-- sources.json
 |   |   `-- tests/
 |   `-- policy_guard/
 |       |-- evals/

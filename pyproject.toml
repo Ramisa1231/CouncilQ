@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "councilq"
 version = "0.1.0"
-description = "Single-agent RAG assistant for City of Adelaide council services."
+description = "Safety-first single-agent workflow assistant for City of Adelaide services."
 requires-python = ">=3.11"
 dependencies = [
     "google-adk>=2.0.0",
@@ -13,7 +13,11 @@ dependencies = [
     "uvicorn>=0.30.0",
     "pydantic>=2.8.0",
     "pyyaml>=6.0.0",
+    "requests>=2.32.0",
 ]
+
+[project.scripts]
+councilq-eval = "evals.harness:main"
 
 [project.optional-dependencies]
 dev = [
@@ -27,4 +31,3 @@ packages = ["app"]
 testpaths = ["tests", "skills"]
 python_files = ["test_*.py"]
 pythonpath = ["."]
-

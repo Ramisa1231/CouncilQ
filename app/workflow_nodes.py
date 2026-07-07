@@ -18,7 +18,7 @@ try:
 except ImportError:
     from config import HUMAN_REVIEW_INTERRUPT_ID
 from .policy import check_request
-from .rag import search_council_sources
+from .rag import mentions_outside_city_of_adelaide, search_council_sources
 from .skills import load_skill_registry
 
 
@@ -55,12 +55,13 @@ def normalize_event(node_input: Any) -> Event:
             metadata={
                 "input_mode": "json_event",
                 "event_keys": sorted(event_data.keys()),
+                "fetch_live_pages": bool(event_data.get("fetch_live_pages", False)),
             },
         )
     else:
         request = CouncilRequest(
             question=text,
-            metadata={"input_mode": "chat_text"},
+            metadata={"input_mode": "chat_text", "fetch_live_pages": False},
         )
 
     return Event(
@@ -129,10 +130,10 @@ def retrieve_sources(node_input: dict[str, Any]) -> Event:
     """Retrieve trusted source metadata for the supported CouncilQ skills."""
     request = CouncilRequest.model_validate(node_input)
 
-    if request.council.lower() != "city of adelaide":
+    if request.council.lower() != "city of adelaide" or mentions_outside_city_of_adelaide(request.question.lower()):
         request.retrieval = {
             "status": "clarification_required",
-            "message": "CouncilQ is currently scoped to the City of Adelaide. Please confirm the property or service is in the City of Adelaide council area.",
+            "message": "CouncilQ is currently scoped to the City of Adelaide. Please confirm the property or service is in the City of Adelaide council area before I continue.",
             "sources": [],
         }
         return Event(
@@ -141,7 +142,10 @@ def retrieve_sources(node_input: dict[str, Any]) -> Event:
             state=_state_update("retrieval_clarification_required", request),
         )
 
-    retrieval = search_council_sources(request.question)
+    retrieval = search_council_sources(
+        request.question,
+        fetch_live_pages=bool(request.metadata.get("fetch_live_pages", False)),
+    )
     request.retrieval = retrieval
     return Event(
         output=request.model_dump(),

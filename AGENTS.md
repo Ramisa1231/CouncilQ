@@ -2,7 +2,7 @@
 
 Stack: Python, Google ADK, FastAPI, pytest, Gemini API.
 
-CouncilQ is a single-agent, RAG-based AI assistant for the City of Adelaide. It uses modular skills and trusted-source retrieval to answer council service questions.
+CouncilQ is a single-agent, safety-first AI assistant for the City of Adelaide. The current MVP uses modular skills and deterministic trusted-source routing for waste/recycling questions.
 
 ## Hard Rules
 
