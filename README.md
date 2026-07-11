@@ -126,6 +126,10 @@ adk web
 
 Then select `CouncilQ` in the ADK web UI.
 
+## CI
+
+Both deterministic tests and the evaluation harness run automatically on every push and pull request via `.github/workflows/ci.yml`.
+
 ## Local Tests
 
 From the `CouncilQ` folder:
