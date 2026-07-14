@@ -15,3 +15,9 @@
 - As a project owner, I want the assistant to ignore prompt injection in retrieved pages.
 - As a project owner, I want PII protected in logs and tool calls.
 
+## Council Documents
+
+- As a resident, I want answers from council policies and by-laws to cite the exact document and page so I can verify the detail.
+- As a project owner, I want CouncilQ to download and extract official PDFs once so repeated questions do not reprocess the same documents.
+- As a developer, I want document ingestion to be testable from local fixtures without relying on the live City of Adelaide website.
+

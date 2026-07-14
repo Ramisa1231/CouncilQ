@@ -31,6 +31,16 @@ The `waste_and_recycling` skill must pass cases for:
 - Prompt injection embedded in user text.
 - Unsupported council or non-Adelaide request.
 
+## Document Retrieval Evals
+
+The document-ingestion and retrieval layer must pass cases for:
+
+- Loading extracted PDF page JSON records with title, URL, page, and text metadata.
+- Returning a relevant City of Adelaide PDF page for a policy-style question.
+- Including the official PDF URL and page number in retrieved source metadata.
+- Falling back to unsupported when no extracted document page matches the question.
+- Rejecting or ignoring document records without trusted source URLs.
+
 ## Policy Evals
 
 Policy evals must verify:
@@ -46,3 +56,4 @@ Policy evals must verify:
 - All JSON eval files are valid.
 - Each expected output names the required behavior, source constraints, and refusal or clarification behavior where relevant.
 - The first implementation must pass deterministic tests and behavior evals before new service skills are added.
+- Document-ingestion changes must include deterministic unit tests that do not require live website access.

@@ -8,9 +8,12 @@ from urllib.parse import urlparse
 
 import requests
 
+from .document_ingestion import load_extracted_pages
+
 
 ROOT = Path(__file__).resolve().parents[1]
 WASTE_SOURCES_PATH = ROOT / "skills" / "waste_and_recycling" / "assets" / "sources.json"
+DOCUMENT_TEXT_DIRECTORY = ROOT / "data" / "extracted" / "json"
 ALLOWED_SOURCE_DOMAINS = {
     "cityofadelaide.com.au",
     "www.cityofadelaide.com.au",
@@ -37,11 +40,7 @@ def search_council_sources(
             "live_retrieval": _empty_live_retrieval(attempted=False),
         }
 
-    matches = [
-        source
-        for source in _load_waste_sources()
-        if any(keyword in lowered for keyword in source["keywords"])
-    ]
+    matches = _matching_waste_sources(lowered)
 
     if any(source["requires_location"] for source in matches) and not _looks_like_address(lowered):
         return {
@@ -73,10 +72,67 @@ def search_council_sources(
         "live_retrieval": _empty_live_retrieval(attempted=False),
     }
 
+    if not unique_sources:
+        document_result = search_extracted_documents(question)
+        if document_result["sources"]:
+            return document_result
+
     if fetch_live_pages and unique_sources:
         result["live_retrieval"] = fetch_live_source_summaries(unique_sources, timeout_seconds=timeout_seconds)
 
     return result
+
+
+def search_extracted_documents(
+    question: str,
+    *,
+    directory: Path | None = None,
+    limit: int = 3,
+) -> dict[str, Any]:
+    """Search locally extracted City of Adelaide document pages with deterministic lexical scoring."""
+    directory = directory or DOCUMENT_TEXT_DIRECTORY
+    pages = load_extracted_pages(directory)
+    if not pages:
+        return {
+            "status": "unsupported",
+            "message": "",
+            "sources": [],
+            "live_retrieval": _empty_live_retrieval(attempted=False),
+        }
+
+    query_terms = _search_terms(question)
+    scored: list[tuple[int, dict[str, Any]]] = []
+    for page in pages:
+        haystack = f"{page['title']} {page['text']}".lower()
+        score = sum(1 for term in query_terms if term in haystack)
+        if score:
+            scored.append((score, page))
+
+    scored.sort(key=lambda item: (-item[0], item[1]["title"], int(item[1].get("page") or 0)))
+    matches = [page for _, page in scored[:limit]]
+    if not matches:
+        return {
+            "status": "unsupported",
+            "message": "",
+            "sources": [],
+            "live_retrieval": _empty_live_retrieval(attempted=False),
+        }
+
+    sources = [
+        {
+            "title": f"{page['title']}, page {page['page']}",
+            "url": page["source_url"],
+            "page": str(page["page"]),
+            "source_file": page["source"],
+        }
+        for page in matches
+    ]
+    return {
+        "status": "answered",
+        "message": "I found relevant City of Adelaide document pages in the local CouncilQ document index.",
+        "sources": sources,
+        "live_retrieval": _empty_live_retrieval(attempted=False),
+    }
 
 
 def fetch_live_source_summaries(
@@ -148,6 +204,62 @@ def _html_to_snippet(html: str, *, max_chars: int = 280) -> str:
     text = re.sub(r"<[^>]+>", " ", without_styles)
     collapsed = re.sub(r"\\s+", " ", text).strip()
     return collapsed[:max_chars].rstrip()
+
+
+def _search_terms(question: str) -> set[str]:
+    stopwords = {
+        "about",
+        "adelaide",
+        "city",
+        "council",
+        "does",
+        "from",
+        "have",
+        "into",
+        "what",
+        "when",
+        "where",
+        "which",
+        "with",
+        "your",
+    }
+    return {
+        token
+        for token in re.findall(r"[a-z0-9]{3,}", question.lower())
+        if token not in stopwords
+    }
+
+
+def _matching_waste_sources(lowered_question: str) -> list[dict[str, Any]]:
+    sources = _load_waste_sources()
+    matches = [
+        source
+        for source in sources
+        if any(keyword in lowered_question for keyword in source["keywords"])
+    ]
+
+    if _looks_like_bin_collection_question(lowered_question):
+        bin_collection = next(
+            source for source in sources if source["id"] == "bin_collection"
+        )
+        if bin_collection not in matches:
+            matches.append(bin_collection)
+
+    return matches
+
+
+def _looks_like_bin_collection_question(text: str) -> bool:
+    if re.search(r"\b(missed|not collected|damaged|lost|stolen)\b", text):
+        return False
+
+    if not re.search(r"\b(when|what day|which day|collection day|collected|pickup|pick up)\b", text):
+        return False
+
+    return bool(
+        re.search(r"\bbins?\b", text)
+        or re.search(r"\bmy\s+ins\b", text)
+        or re.search(r"\bins\s+collected\b", text)
+    )
 
 
 @lru_cache(maxsize=1)

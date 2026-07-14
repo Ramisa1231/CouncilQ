@@ -162,6 +162,32 @@ councilq-eval
 
 This harness validates deterministic behavior (policy decisions, tool trajectory constraints, required sources, and forbidden content checks) for the current MVP implementation.
 
+## Offline Council Document Ingestion
+
+CouncilQ can download official City of Adelaide PDF documents once, extract page-level text, and reuse the local JSON records for deterministic document retrieval. This is intended for policy, strategy, guideline, and by-law PDFs from the official City of Adelaide strategies, plans, and policies directory.
+
+Install project dependencies first:
+
+```powershell
+pip install -e ".[dev]"
+```
+
+Then run the downloader from the `CouncilQ` folder:
+
+```powershell
+python scripts\download_documents.py --max-documents 10
+```
+
+Use `--max-documents 0` after testing if you want to process all discovered PDFs. Extracted artifacts are written under:
+
+```text
+data/raw/pdf/
+data/extracted/json/
+data/indexes/
+```
+
+Generated document artifacts and `document_manifest.json` are ignored by git. Each extracted page record preserves the document title, PDF URL, source directory URL, local file name, page number, text, and content hash so CouncilQ can cite answers as document pages rather than anonymous chunks.
+
 ## Minimal FastAPI Surface
 
 CouncilQ now includes a narrow read-only API for the current assistant behavior.

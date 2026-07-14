@@ -4,3 +4,7 @@ __pycache__/
 *.py[cod]
 .env
 *.egg-info/
+data/raw/pdf/
+data/extracted/json/
+data/indexes/
+document_manifest.json

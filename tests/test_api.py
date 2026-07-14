@@ -30,3 +30,35 @@ def test_ask_endpoint_returns_structured_response():
     assert isinstance(body["sources"], list)
     assert "policy" in body
     assert "live_retrieval" in body
+
+
+def test_ask_endpoint_can_return_document_page_sources(monkeypatch):
+    monkeypatch.setattr(
+        "app.rag.load_extracted_pages",
+        lambda _directory: [
+            {
+                "text": "The privacy policy explains personal information handling.",
+                "title": "Privacy Policy",
+                "source": "privacy-policy.pdf",
+                "source_url": "https://d31atr86jnqrq2.cloudfront.net/docs/privacy-policy.pdf",
+                "directory_url": "https://www.cityofadelaide.com.au/about-council/plans-reporting/strategies-plans-policies/",
+                "page": 4,
+                "content_hash": "abc",
+            }
+        ],
+    )
+
+    response = client.post(
+        "/ask",
+        json={
+            "question": "What does the privacy policy say about personal information?",
+            "council": "City of Adelaide",
+            "fetch_live_pages": False,
+        },
+    )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["status"] == "answered"
+    assert body["sources"][0]["title"] == "Privacy Policy, page 4"
+    assert body["sources"][0]["page"] == "4"
