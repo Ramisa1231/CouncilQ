@@ -23,6 +23,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PDF_DIRECTORY = ROOT / "data" / "raw" / "pdf"
 TEXT_DIRECTORY = ROOT / "data" / "extracted" / "json"
 INDEX_DIRECTORY = ROOT / "data" / "indexes"
+VECTOR_DB_FILE = INDEX_DIRECTORY / "vector_db.json"
 MANIFEST_FILE = ROOT / "document_manifest.json"
 REQUEST_HEADERS = {
     "User-Agent": "CouncilQ/1.0 (educational council-policy retrieval project)",
@@ -313,6 +314,111 @@ def chunk_document_pages(
             start += max_chars - overlap
             chunk_id += 1
     return records
+
+
+def recursive_chunk_text(
+    text: str,
+    *,
+    max_chars: int = 1000,
+    overlap: int = 100,
+    separators: tuple[str, ...] = ("\n\n", "\n", ". ", " ", ""),
+) -> list[dict[str, Any]]:
+    """Split text with recursive separators, preserving start offsets."""
+    normalized = text.strip()
+    if not normalized:
+        return []
+
+    chunks = _recursive_split(normalized, max_chars=max_chars, separators=separators)
+    records: list[dict[str, Any]] = []
+    cursor = 0
+    previous_tail = ""
+    for chunk in chunks:
+        chunk = chunk.strip()
+        if not chunk:
+            continue
+
+        if overlap and previous_tail:
+            chunk = f"{previous_tail}{chunk}".strip()
+
+        start_index = normalized.find(chunk[: min(len(chunk), 80)].strip(), cursor)
+        if start_index == -1:
+            start_index = cursor
+
+        records.append({"text": chunk, "start_index": start_index})
+        cursor = min(len(normalized), start_index + len(chunk))
+        previous_tail = chunk[-overlap:] if overlap else ""
+
+    return records
+
+
+def chunk_document_pages_recursive(
+    documents: Iterable[dict[str, Any]],
+    *,
+    max_chars: int = 1000,
+    overlap: int = 100,
+) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    seen_texts: set[str] = set()
+
+    for document in documents:
+        for chunk_id, chunk in enumerate(
+            recursive_chunk_text(document["text"], max_chars=max_chars, overlap=overlap)
+        ):
+            text = chunk["text"]
+            if text in seen_texts:
+                continue
+            seen_texts.add(text)
+            records.append(
+                {
+                    "text": text,
+                    "title": document["title"],
+                    "source": document["source"],
+                    "source_url": document["source_url"],
+                    "directory_url": document.get("directory_url", ""),
+                    "page": document["page"],
+                    "content_hash": document.get("content_hash", ""),
+                    "chunk_id": chunk_id,
+                    "start_index": chunk["start_index"],
+                }
+            )
+
+    return records
+
+
+def _recursive_split(
+    text: str,
+    *,
+    max_chars: int,
+    separators: tuple[str, ...],
+) -> list[str]:
+    if len(text) <= max_chars:
+        return [text]
+
+    separator = separators[0]
+    remaining_separators = separators[1:] or ("",)
+    if separator == "":
+        return [text[index : index + max_chars] for index in range(0, len(text), max_chars)]
+
+    pieces = text.split(separator)
+    if len(pieces) == 1:
+        return _recursive_split(text, max_chars=max_chars, separators=remaining_separators)
+
+    chunks: list[str] = []
+    current = ""
+    for piece in pieces:
+        candidate = piece if not current else f"{current}{separator}{piece}"
+        if len(candidate) <= max_chars:
+            current = candidate
+            continue
+
+        if current:
+            chunks.extend(_recursive_split(current, max_chars=max_chars, separators=remaining_separators))
+        current = piece
+
+    if current:
+        chunks.extend(_recursive_split(current, max_chars=max_chars, separators=remaining_separators))
+
+    return chunks
 
 
 class _LinkParser(HTMLParser):

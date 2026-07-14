@@ -102,3 +102,28 @@ def test_unmatched_document_question_remains_unsupported(monkeypatch, tmp_path):
 
     assert result["status"] == "unsupported"
     assert result["sources"] == []
+
+
+def test_document_search_prefers_vector_index(monkeypatch):
+    monkeypatch.setattr(
+        "app.rag.search_vector_database",
+        lambda question, limit: [
+            {
+                "score": 0.99,
+                "text": "Privacy and personal information.",
+                "metadata": {
+                    "title": "Privacy Policy",
+                    "source": "privacy-policy.pdf",
+                    "source_url": "https://d31atr86jnqrq2.cloudfront.net/docs/privacy-policy.pdf",
+                    "page": 4,
+                },
+            }
+        ],
+    )
+
+    result = search_council_sources("What does the privacy policy say about personal information?")
+
+    assert result["status"] == "answered"
+    assert "vector index" in result["message"]
+    assert result["sources"][0]["title"] == "Privacy Policy, page 4"
+    assert result["sources"][0]["score"] == "0.990000"

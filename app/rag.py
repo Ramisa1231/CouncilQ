@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 import requests
 
 from .document_ingestion import load_extracted_pages
+from .vector_db import search_vector_database
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -89,8 +90,12 @@ def search_extracted_documents(
     directory: Path | None = None,
     limit: int = 3,
 ) -> dict[str, Any]:
-    """Search locally extracted City of Adelaide document pages with deterministic lexical scoring."""
+    """Search locally indexed City of Adelaide documents, preferring vector_db.json when present."""
     directory = directory or DOCUMENT_TEXT_DIRECTORY
+    vector_matches = search_vector_database(question, limit=limit)
+    if vector_matches:
+        return _document_result_from_vector_matches(vector_matches)
+
     pages = load_extracted_pages(directory)
     if not pages:
         return {
@@ -130,6 +135,28 @@ def search_extracted_documents(
     return {
         "status": "answered",
         "message": "I found relevant City of Adelaide document pages in the local CouncilQ document index.",
+        "sources": sources,
+        "live_retrieval": _empty_live_retrieval(attempted=False),
+    }
+
+
+def _document_result_from_vector_matches(matches: list[dict[str, Any]]) -> dict[str, Any]:
+    sources = []
+    for match in matches:
+        metadata = match["metadata"]
+        sources.append(
+            {
+                "title": f"{metadata['title']}, page {metadata['page']}",
+                "url": metadata["source_url"],
+                "page": str(metadata["page"]),
+                "source_file": metadata["source"],
+                "score": f"{match['score']:.6f}",
+            }
+        )
+
+    return {
+        "status": "answered",
+        "message": "I found relevant City of Adelaide document chunks in the local CouncilQ vector index.",
         "sources": sources,
         "live_retrieval": _empty_live_retrieval(attempted=False),
     }

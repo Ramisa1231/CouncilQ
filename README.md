@@ -20,11 +20,12 @@ CouncilQ currently contains:
 - First governance skill: `policy_guard`.
 - Google ADK entry point: `agent.py`.
 - Helper implementation files under `app/`.
-- Deterministic tests for policy, source lookup, and skill registry loading.
+- Offline City of Adelaide PDF ingestion and `vector_db.json` document retrieval.
+- Deterministic tests for policy, source lookup, document retrieval, and skill registry loading.
 
-The current implementation is a read-only MVP foundation. It runs as an ADK 2.0 graph workflow: classify the request, apply policy checks, route to trusted waste/recycling sources, and render a deterministic answer structure (answered, clarification_required, unsupported, or blocked).
+The current implementation is a read-only MVP foundation. It runs as an ADK 2.0 graph workflow: classify the request, apply policy checks, route to trusted waste/recycling sources first, optionally search an offline City of Adelaide PDF vector index, and render a deterministic answer structure (answered, clarification_required, unsupported, or blocked).
 
-Today this is **not** a full semantic RAG system (no embeddings/vector index/chunk ranking yet). It is a safety-first workflow plus deterministic trusted-source routing, with an optional live fetch pass over allowlisted trusted pages.
+CouncilQ now supports an optional offline semantic document index for ingested City of Adelaide PDFs. The primary waste/recycling MVP flow remains deterministic; broader council-document questions can use `data/indexes/vector_db.json` when it has been built, then fall back to deterministic extracted-page lexical matching if no vector index is available.
 
 ## Codelab Alignment
 
@@ -44,7 +45,7 @@ Current graph:
 Roadmap increments after this MVP:
 
 1. Add a richer answer-review layer with structured output checks.
-2. Expand retrieval depth beyond deterministic keyword/source routing.
+2. Improve document retrieval quality with reranking and answer review.
 3. Add broader behavioral eval coverage as more skills are implemented.
 
 ## Architecture
@@ -68,10 +69,18 @@ flowchart LR
 		H -->|human_approved| HA["respond_human_approved"]
 		H -->|human_rejected| HR["respond_human_rejected"]
 		P -->|continue| RET["retrieve_sources<br/>(RAG matcher & trusted sources)"]
+		RET --> WASTE["curated waste/recycling matcher"]
+		WASTE -->|no curated match| VDB["vector_db.json<br/><i>semantic PDF retrieval</i>"]
+		VDB -->|missing/no match| LEX["extracted-page lexical fallback"]
 
 		RET -->|answered| RA["respond_answered<br/>(Answer with sources)"]
 		RET -->|clarification_required| RC["respond_clarification_required<br/>(Ask for clarification)"]
 		RET -->|unsupported| RU["respond_unsupported<br/>(AI unsupported)"]
+		WASTE -->|answered| RA
+		WASTE -->|clarification| RC
+		VDB -->|answered| RA
+		LEX -->|answered| RA
+		LEX -->|no match| RU
 	end
 
 	%% show connections to final responses
@@ -187,6 +196,14 @@ data/indexes/
 ```
 
 Generated document artifacts and `document_manifest.json` are ignored by git. Each extracted page record preserves the document title, PDF URL, source directory URL, local file name, page number, text, and content hash so CouncilQ can cite answers as document pages rather than anonymous chunks.
+
+Build the local vector database after documents have been extracted:
+
+```powershell
+python scripts\build_vector_db.py
+```
+
+This writes `data/indexes/vector_db.json`. The index follows the Hugging Face advanced RAG pattern: recursive character chunks with overlap, `thenlper/gte-small` sentence embeddings, normalized vectors, cosine similarity, and top-k retrieval with metadata preserved. If `vector_db.json` exists, CouncilQ uses it for document retrieval; otherwise it falls back to deterministic lexical page matching.
 
 ## Minimal FastAPI Surface
 

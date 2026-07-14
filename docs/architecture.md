@@ -1,6 +1,6 @@
 # Architecture
 
-CouncilQ uses a single-agent ADK 2.0 workflow with modular Day 3 skills. The graph normalizes incoming chat or event payloads, classifies the request, applies policy checks, routes to deterministic trusted-source support for the current MVP, and renders a grounded response.
+CouncilQ uses a single-agent ADK 2.0 workflow with modular Day 3 skills. The graph normalizes incoming chat or event payloads, classifies the request, applies policy checks, routes to deterministic trusted-source support for the current waste/recycling MVP, optionally searches an offline City of Adelaide PDF vector index, and renders a grounded response.
 
 ```mermaid
 flowchart LR
@@ -18,11 +18,19 @@ flowchart LR
     P -->|requires_human_approval| H["request_human_approval<br/><i>ADK RequestInput</i>"]
     H -->|human_approved| HA["respond_human_approved"]
     H -->|human_rejected| HR["respond_human_rejected"]
-    P -->|continue| RET["retrieve_sources<br/><i>deterministic source routing</i>"]
+    P -->|continue| RET["retrieve_sources<br/><i>trusted-source retrieval</i>"]
+    RET --> WASTE["curated waste/recycling matcher"]
+    WASTE -->|no curated match| VDB["vector_db.json<br/><i>semantic PDF retrieval</i>"]
+    VDB -->|missing/no match| LEX["extracted-page lexical fallback"]
 
     RET -->|answered| RA["respond_answered"]
     RET -->|clarification_required| RC["respond_clarification_required"]
     RET -->|unsupported| RU["respond_unsupported"]
+    WASTE -->|answered| RA
+    WASTE -->|clarification| RC
+    VDB -->|answered| RA
+    LEX -->|answered| RA
+    LEX -->|no match| RU
   end
 
   RB --> OUT1["User response"]
@@ -46,7 +54,10 @@ flowchart LR
 
 - Single agent by default; skills provide modular, testable procedures.
 - `normalize_event` accepts chat text, plain JSON `data`, and base64 Pub/Sub-style `data`.
-- Current retrieval is deterministic trusted-source routing for MVP waste/recycling support.
+- Current retrieval first applies deterministic trusted-source routing for MVP waste/recycling support.
+- If curated waste/recycling sources do not match, CouncilQ searches `data/indexes/vector_db.json` when it exists.
+- `vector_db.json` uses recursive character chunks with overlap, `thenlper/gte-small` embeddings, normalized vectors, cosine similarity, and preserved citation metadata.
+- If no vector index exists, CouncilQ falls back to deterministic lexical matching over extracted page JSON records.
 - Optional live page fetch is allowlisted and best-effort; if unavailable, CouncilQ falls back to curated trusted links.
 - `policy_screen` runs before retrieval or any higher-risk workflow branch.
 - Human approval uses ADK `RequestInput` and resumes through explicit approval/rejection routes.
