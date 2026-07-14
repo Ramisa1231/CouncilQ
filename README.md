@@ -7,14 +7,15 @@ It uses one retrieval pipeline rather than a multi-skill agent:
 ```text
 user question
 -> policy/safety check
--> trusted-source retrieval
--> deterministic query expansion
--> hybrid dense + lexical retrieval with RRF when indexed documents are available
--> reranking and extractive context compression
--> extracted-page lexical fallback when no vector index is available
+-> trusted source seed lookup for known service questions
+-> document RAG fallback with deterministic query expansion
+-> dense vector search when vector_db.json is available
+-> lexical search over vector records or extracted pages
+-> RRF fusion, reranking, and extractive context compression
 -> grounded response with citations
--> retrieval telemetry in data/indexes/retrieval_logs.jsonl
 ```
+
+Retrieval events are also logged to `data/indexes/retrieval_logs.jsonl` for debugging and benchmark triage.
 
 ## Current Status
 
@@ -42,25 +43,35 @@ flowchart LR
   H -->|human_approved| HA["respond_human_approved"]
   H -->|human_rejected| HR["respond_human_rejected"]
   P -->|continue| R["retrieve_sources"]
-  R --> D["trusted source seeds"]
-  D --> Q["query expansion"]
-  Q --> HY["hybrid retrieval<br/>(dense + lexical + RRF)"]
-  HY --> K["rerank + compress context"]
-  K --> L["extracted-page lexical fallback"]
-  R -->|answered| RA["respond_answered"]
-  R -->|clarification_required| RC["respond_clarification_required"]
-  R -->|unsupported| RU["respond_unsupported"]
+  R --> S["trusted source seed lookup"]
+  R --> Q["document query expansion"]
+  Q --> V["dense vector search<br/>(when vector_db.json exists)"]
+  Q --> L["lexical search<br/>(vector records or extracted pages)"]
+  V --> F["RRF fusion"]
+  L --> F
+  F --> K["rerank + compress context"]
+  S --> G["grounding validation"]
+  K --> G
+  G -->|answered| RA["respond_answered"]
+  G -->|clarification_required| RC["respond_clarification_required"]
+  G -->|unsupported| RU["respond_unsupported"]
 ```
 
 Runtime modules:
 
 ```text
 app/
+|-- answer.py
 |-- api.py
+|-- context_compression.py
 |-- document_ingestion.py
+|-- grounding.py
 |-- policy.py
+|-- query_rewrite.py
 |-- rag.py
+|-- rerank.py
 |-- retrieval.py
+|-- telemetry.py
 |-- tools.py
 |-- vector_db.py
 `-- workflow_nodes.py

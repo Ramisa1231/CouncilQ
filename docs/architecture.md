@@ -11,14 +11,18 @@ flowchart LR
   H -->|human_approved| HA["respond_human_approved"]
   H -->|human_rejected| HR["respond_human_rejected"]
   P -->|continue| RET["retrieve_sources"]
-  RET --> SEED["trusted source seeds"]
-  SEED --> QUERY["query expansion"]
-  QUERY --> HYBRID["hybrid retrieval<br/>(dense + lexical + RRF)"]
-  HYBRID --> RERANK["rerank + compress context"]
-  RERANK --> LEX["extracted-page lexical fallback"]
-  RET -->|answered| RA["respond_answered"]
-  RET -->|clarification_required| RC["respond_clarification_required"]
-  RET -->|unsupported| RU["respond_unsupported"]
+  RET --> SEED["trusted source seed lookup"]
+  RET --> QUERY["document query expansion"]
+  QUERY --> DENSE["dense vector search<br/>(when vector_db.json exists)"]
+  QUERY --> LEX["lexical search<br/>(vector records or extracted pages)"]
+  DENSE --> FUSION["RRF fusion"]
+  LEX --> FUSION
+  FUSION --> RERANK["rerank + compress context"]
+  SEED --> GROUND["grounding validation"]
+  RERANK --> GROUND
+  GROUND -->|answered| RA["respond_answered"]
+  GROUND -->|clarification_required| RC["respond_clarification_required"]
+  GROUND -->|unsupported| RU["respond_unsupported"]
 
   RB --> OUT1["User response"]
   HA --> OUT2["User response"]
@@ -33,12 +37,12 @@ flowchart LR
 - One assistant, one RAG pipeline.
 - `normalize_event` accepts chat text, plain JSON `data`, and base64 Pub/Sub-style `data`.
 - `policy_screen` runs before retrieval.
-- Trusted URL seeds live in `data/seeds/trusted_sources.json`.
+- Trusted URL seeds live in `data/seeds/trusted_sources.json` and handle known service questions before document fallback is needed.
 - PDF ingestion writes page-level JSON under `data/extracted/json/`.
 - `vector_db.json` uses recursive character chunks with overlap, `thenlper/gte-small` embeddings, normalized vectors, cosine similarity, and preserved citation metadata.
-- Document retrieval expands citizen wording deterministically, fuses dense vector candidates with lexical matches using Reciprocal Rank Fusion, reranks fused candidates, and compresses snippets before citation formatting.
-- If no vector index exists, CouncilQ falls back to deterministic lexical matching over extracted page JSON records.
-- Runtime retrieval events are appended to `data/indexes/retrieval_logs.jsonl` for debugging and benchmark triage.
+- Document retrieval expands citizen wording deterministically, runs dense vector search when `vector_db.json` is available, runs lexical search over vector records or extracted page JSON, fuses candidates with Reciprocal Rank Fusion, reranks fused candidates, and compresses snippets before citation formatting.
+- If no vector index exists, lexical document search reads extracted page JSON records directly.
+- Runtime retrieval events are appended to `data/indexes/retrieval_logs.jsonl` as a side effect for debugging and benchmark triage.
 - Optional live page fetch is allowlisted and best-effort.
 - Human approval uses ADK `RequestInput` and resumes through explicit approval/rejection routes.
 - Quality gates are retrieval benchmarks, answer evals, and deterministic pytest coverage.
