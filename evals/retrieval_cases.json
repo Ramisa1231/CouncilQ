@@ -1,0 +1,48 @@
+{
+  "cases": [
+    {
+      "id": "retrieval-001-bin-collection",
+      "query": "When are my bins collected?",
+      "expected_source_urls": [
+        "https://www.cityofadelaide.com.au/resident/recycling-waste/bin-collection-day-checker/"
+      ],
+      "forbidden_source_urls": []
+    },
+    {
+      "id": "retrieval-002-missed-bin",
+      "query": "My general waste bin was not collected today. What should I do?",
+      "expected_source_urls": [
+        "https://www.cityofadelaide.com.au/resident/recycling-waste/bin-requests-and-issues/"
+      ],
+      "forbidden_source_urls": [
+        "https://www.cityofadelaide.com.au/resident/recycling-waste/bin-collection-day-checker/"
+      ]
+    },
+    {
+      "id": "retrieval-003-hard-waste",
+      "query": "How do I get rid of an old couch?",
+      "expected_source_urls": [
+        "https://www.cityofadelaide.com.au/resident/recycling-waste/hard-waste-collection-for-residents/"
+      ],
+      "forbidden_source_urls": []
+    },
+    {
+      "id": "retrieval-004-which-bin",
+      "query": "Which bin should I use for a pizza box?",
+      "expected_source_urls": [
+        "https://www.cityofadelaide.com.au/resident/recycling-waste/which-bin/",
+        "https://www.whichbin.sa.gov.au/"
+      ],
+      "forbidden_source_urls": []
+    },
+    {
+      "id": "retrieval-005-batteries",
+      "query": "Where can I recycle batteries in Adelaide?",
+      "expected_source_urls": [
+        "https://www.cityofadelaide.com.au/resident/recycling-waste/which-bin/",
+        "https://www.whichbin.sa.gov.au/"
+      ],
+      "forbidden_source_urls": []
+    }
+  ]
+}

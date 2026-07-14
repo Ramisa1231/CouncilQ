@@ -171,6 +171,20 @@ councilq-eval
 
 This harness validates deterministic behavior (policy decisions, tool trajectory constraints, required sources, and forbidden content checks) for the current MVP implementation.
 
+## Retrieval Benchmarks
+
+Run the retrieval benchmark against `evals/retrieval_cases.json`:
+
+```powershell
+python -m scripts.eval_retrieval
+```
+
+The benchmark reports `Recall@k`, `MRR@k`, and `nDCG@k` for known queries and expected source URLs, pages, or chunk IDs. It is offline and exits successfully by default so developers can inspect metrics while the fixture set is still evolving. To enforce a minimum average `Recall@k`, pass an explicit threshold:
+
+```powershell
+python -m scripts.eval_retrieval --k 5 --fail-under 0.8
+```
+
 ## Offline Council Document Ingestion
 
 CouncilQ can download official City of Adelaide PDF documents once, extract page-level text, and reuse the local JSON records for deterministic document retrieval. This is intended for policy, strategy, guideline, and by-law PDFs from the official City of Adelaide strategies, plans, and policies directory.
