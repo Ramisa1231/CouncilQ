@@ -185,6 +185,12 @@ The benchmark reports `Recall@k`, `MRR@k`, and `nDCG@k` for known queries and ex
 python -m scripts.eval_retrieval --k 5 --fail-under 0.8
 ```
 
+Cases pass only when their `Recall@k` meets `min_recall`. The default is strict (`1.0`), but a case can set `min_recall`, or the CLI can provide a default for cases that do not specify one:
+
+```powershell
+python -m scripts.eval_retrieval --min-recall-default 0.5
+```
+
 ## Offline Council Document Ingestion
 
 CouncilQ can download official City of Adelaide PDF documents once, extract page-level text, and reuse the local JSON records for deterministic document retrieval. This is intended for policy, strategy, guideline, and by-law PDFs from the official City of Adelaide strategies, plans, and policies directory.

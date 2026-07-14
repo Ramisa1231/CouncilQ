@@ -43,9 +43,15 @@ def retrieve_for_case(query: str, *, k: int) -> list[RetrievalItem]:
     ]
 
 
-def evaluate_retrieval_cases(cases: list[dict[str, Any]], *, k: int = 5) -> dict[str, Any]:
+def evaluate_retrieval_cases(
+    cases: list[dict[str, Any]],
+    *,
+    k: int = 5,
+    min_recall_default: float = 1.0,
+) -> dict[str, Any]:
     if k <= 0:
         raise ValueError("k must be greater than 0")
+    _validate_recall_threshold(min_recall_default, "min_recall_default")
     validate_retrieval_cases(cases)
 
     results: list[dict[str, Any]] = []
@@ -60,15 +66,17 @@ def evaluate_retrieval_cases(cases: list[dict[str, Any]], *, k: int = 5) -> dict
             url for url in retrieved_urls if _normalize_url(url) in forbidden_urls
         ]
         metrics = calculate_case_metrics(retrieved_id_sets, relevant_ids, k=k)
+        min_recall = float(case.get("min_recall", min_recall_default))
         results.append(
             {
                 "id": case["id"],
                 "query": case["query"],
+                "min_recall": min_recall,
                 "retrieved": [item.__dict__ for item in retrieved],
                 "expected": sorted(relevant_ids),
                 "forbidden_hits": forbidden_hits,
                 "metrics": metrics,
-                "passed": metrics[f"recall@{k}"] == 1.0 and not forbidden_hits,
+                "passed": metrics[f"recall@{k}"] >= min_recall and not forbidden_hits,
             }
         )
 
@@ -104,6 +112,8 @@ def validate_retrieval_cases(cases: list[dict[str, Any]]) -> None:
         _validate_string_list(case, "expected_source_urls", label)
         _validate_string_list(case, "expected_chunk_ids", label)
         _validate_string_list(case, "forbidden_source_urls", label)
+        if "min_recall" in case:
+            _validate_recall_threshold(case["min_recall"], f"{label}.min_recall")
 
         expected_pages = case.get("expected_pages", [])
         if expected_pages is None:
@@ -214,6 +224,13 @@ def _validate_string_list(case: dict[str, Any], field: str, label: str) -> None:
             raise ValueError(f"{label}: {field}[{index}] must be a non-empty string")
 
 
+def _validate_recall_threshold(value: Any, label: str) -> None:
+    if not isinstance(value, int | float):
+        raise ValueError(f"{label} must be a number")
+    if not 0.0 <= float(value) <= 1.0:
+        raise ValueError(f"{label} must be between 0.0 and 1.0")
+
+
 def _normalize_url(url: str) -> str:
     parsed = urlparse(url.strip())
     path = parsed.path
@@ -237,6 +254,12 @@ def main() -> int:
     parser.add_argument("--k", type=int, default=5)
     parser.add_argument("--json", action="store_true")
     parser.add_argument(
+        "--min-recall-default",
+        type=float,
+        default=1.0,
+        help="Default per-case Recall@k pass threshold. Cases can override with min_recall.",
+    )
+    parser.add_argument(
         "--fail-under",
         type=float,
         default=None,
@@ -245,8 +268,14 @@ def main() -> int:
     args = parser.parse_args()
     if args.k <= 0:
         parser.error("--k must be greater than 0")
+    if not 0.0 <= args.min_recall_default <= 1.0:
+        parser.error("--min-recall-default must be between 0.0 and 1.0")
 
-    summary = evaluate_retrieval_cases(load_retrieval_cases(args.cases), k=args.k)
+    summary = evaluate_retrieval_cases(
+        load_retrieval_cases(args.cases),
+        k=args.k,
+        min_recall_default=args.min_recall_default,
+    )
     if args.json:
         print(json.dumps(summary, indent=2))
     else:

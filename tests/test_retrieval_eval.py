@@ -170,11 +170,78 @@ def test_forbidden_source_matching_normalizes_urls(monkeypatch):
     assert summary["results"][0]["forbidden_hits"]
 
 
+def test_default_min_recall_remains_strict(monkeypatch):
+    monkeypatch.setattr(
+        "scripts.eval_retrieval.retrieve_for_case",
+        lambda query, k: [RetrievalItem(source_url="source-a")],
+    )
+
+    summary = evaluate_retrieval_cases(
+        [
+            {
+                "id": "strict",
+                "query": "query",
+                "expected_source_urls": ["source-a", "source-b"],
+            }
+        ],
+        k=5,
+    )
+
+    assert summary["failed"] == 1
+    assert summary["results"][0]["min_recall"] == 1.0
+    assert summary["results"][0]["metrics"]["recall@5"] == 0.5
+
+
+def test_case_min_recall_can_relax_pass_threshold(monkeypatch):
+    monkeypatch.setattr(
+        "scripts.eval_retrieval.retrieve_for_case",
+        lambda query, k: [RetrievalItem(source_url="source-a")],
+    )
+
+    summary = evaluate_retrieval_cases(
+        [
+            {
+                "id": "relaxed",
+                "query": "query",
+                "expected_source_urls": ["source-a", "source-b"],
+                "min_recall": 0.5,
+            }
+        ],
+        k=5,
+    )
+
+    assert summary["passed"] == 1
+    assert summary["results"][0]["min_recall"] == 0.5
+
+
+def test_global_min_recall_default_can_relax_pass_threshold(monkeypatch):
+    monkeypatch.setattr(
+        "scripts.eval_retrieval.retrieve_for_case",
+        lambda query, k: [RetrievalItem(source_url="source-a")],
+    )
+
+    summary = evaluate_retrieval_cases(
+        [
+            {
+                "id": "global-relaxed",
+                "query": "query",
+                "expected_source_urls": ["source-a", "source-b"],
+            }
+        ],
+        k=5,
+        min_recall_default=0.5,
+    )
+
+    assert summary["passed"] == 1
+    assert summary["results"][0]["min_recall"] == 0.5
+
+
 def test_validate_retrieval_cases_rejects_malformed_cases():
     malformed_cases = [
         {"id": "missing-query", "expected_source_urls": ["url"]},
         {"id": "missing-expected", "query": "privacy"},
         {"id": "bad-page", "query": "privacy", "expected_pages": [{"source_url": "url"}]},
+        {"id": "bad-min-recall", "query": "privacy", "expected_source_urls": ["url"], "min_recall": 1.2},
     ]
 
     for case in malformed_cases:
@@ -196,3 +263,16 @@ def test_k_must_be_greater_than_zero():
         return
 
     raise AssertionError("k=0 should fail")
+
+
+def test_min_recall_default_must_be_valid():
+    try:
+        evaluate_retrieval_cases(
+            [{"id": "case", "query": "privacy", "expected_source_urls": ["url"]}],
+            min_recall_default=-0.1,
+        )
+    except ValueError as error:
+        assert "min_recall_default must be between 0.0 and 1.0" in str(error)
+        return
+
+    raise AssertionError("invalid min_recall_default should fail")
