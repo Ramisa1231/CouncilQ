@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 import requests
 
 from .document_ingestion import load_extracted_pages
-from .vector_db import search_vector_database
+from .retrieval import hybrid_search
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -92,9 +92,9 @@ def search_extracted_documents(
 ) -> dict[str, Any]:
     """Search locally indexed City of Adelaide documents, preferring vector_db.json when present."""
     directory = directory or DOCUMENT_TEXT_DIRECTORY
-    vector_matches = search_vector_database(question, limit=limit)
-    if vector_matches:
-        return _document_result_from_vector_matches(vector_matches)
+    hybrid_matches = hybrid_search(question, text_directory=directory, limit=limit)
+    if hybrid_matches:
+        return _document_result_from_hybrid_matches(hybrid_matches)
 
     pages = load_extracted_pages(directory)
     if not pages:
@@ -140,7 +140,7 @@ def search_extracted_documents(
     }
 
 
-def _document_result_from_vector_matches(matches: list[dict[str, Any]]) -> dict[str, Any]:
+def _document_result_from_hybrid_matches(matches: list[dict[str, Any]]) -> dict[str, Any]:
     sources = []
     for match in matches:
         metadata = match["metadata"]
@@ -150,13 +150,21 @@ def _document_result_from_vector_matches(matches: list[dict[str, Any]]) -> dict[
                 "url": metadata["source_url"],
                 "page": str(metadata["page"]),
                 "source_file": metadata["source"],
-                "score": f"{match['score']:.6f}",
+                "chunk_id": str(metadata.get("chunk_id", "")),
+                "rrf_score": f"{match['rrf_score']:.6f}",
+                "retrieval_score": f"{float(match.get('retrieval_score', 0.0)):.6f}",
+                "lexical_score": f"{float(match.get('lexical_score', 0.0)):.6f}",
+                "rerank_score": f"{float(match.get('rerank_score', 0.0)):.6f}",
+                "dense_rank": str(match.get("dense_rank") or ""),
+                "lexical_rank": str(match.get("lexical_rank") or ""),
+                "rerank_rank": str(match.get("rerank_rank") or ""),
+                "snippet": match.get("text", ""),
             }
         )
 
     return {
         "status": "answered",
-        "message": "I found relevant City of Adelaide document chunks in the local CouncilQ vector index.",
+        "message": "I found relevant City of Adelaide document chunks in the local CouncilQ hybrid retrieval index.",
         "sources": sources,
         "live_retrieval": _empty_live_retrieval(attempted=False),
     }

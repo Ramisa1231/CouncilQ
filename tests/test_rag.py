@@ -104,12 +104,16 @@ def test_unmatched_document_question_remains_unsupported(monkeypatch, tmp_path):
     assert result["sources"] == []
 
 
-def test_document_search_prefers_vector_index(monkeypatch):
+def test_document_search_uses_hybrid_index(monkeypatch):
     monkeypatch.setattr(
-        "app.rag.search_vector_database",
-        lambda question, limit: [
+        "app.rag.hybrid_search",
+        lambda question, text_directory, limit: [
             {
-                "score": 0.99,
+                "rrf_score": 0.99,
+                "retrieval_score": 0.95,
+                "lexical_score": 2.0,
+                "dense_rank": 1,
+                "lexical_rank": 1,
                 "text": "Privacy and personal information.",
                 "metadata": {
                     "title": "Privacy Policy",
@@ -124,6 +128,8 @@ def test_document_search_prefers_vector_index(monkeypatch):
     result = search_council_sources("What does the privacy policy say about personal information?")
 
     assert result["status"] == "answered"
-    assert "vector index" in result["message"]
+    assert "hybrid retrieval index" in result["message"]
     assert result["sources"][0]["title"] == "Privacy Policy, page 4"
-    assert result["sources"][0]["score"] == "0.990000"
+    assert result["sources"][0]["rrf_score"] == "0.990000"
+    assert result["sources"][0]["dense_rank"] == "1"
+    assert result["sources"][0]["lexical_rank"] == "1"

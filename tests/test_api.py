@@ -32,6 +32,28 @@ def test_ask_endpoint_returns_structured_response():
     assert "live_retrieval" in body
 
 
+def test_ask_endpoint_emits_retrieval_telemetry(monkeypatch):
+    events = []
+    monkeypatch.setattr(
+        "app.retrieval.log_retrieval_event",
+        lambda **event: events.append(event),
+    )
+
+    response = client.post(
+        "/ask",
+        json={
+            "question": "When is my bin collected?",
+            "council": "City of Adelaide",
+            "fetch_live_pages": False,
+        },
+    )
+
+    assert response.status_code == 200
+    assert events
+    assert events[0]["query"] == "When is my bin collected?"
+    assert events[0]["status"] == "clarification_required"
+
+
 def test_ask_endpoint_can_return_document_page_sources(monkeypatch):
     monkeypatch.setattr(
         "app.rag.load_extracted_pages",

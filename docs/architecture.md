@@ -12,8 +12,10 @@ flowchart LR
   H -->|human_rejected| HR["respond_human_rejected"]
   P -->|continue| RET["retrieve_sources"]
   RET --> SEED["trusted source seeds"]
-  SEED --> VDB["vector_db.json semantic retrieval"]
-  VDB --> LEX["extracted-page lexical fallback"]
+  SEED --> QUERY["query expansion"]
+  QUERY --> HYBRID["hybrid retrieval<br/>(dense + lexical + RRF)"]
+  HYBRID --> RERANK["rerank + compress context"]
+  RERANK --> LEX["extracted-page lexical fallback"]
   RET -->|answered| RA["respond_answered"]
   RET -->|clarification_required| RC["respond_clarification_required"]
   RET -->|unsupported| RU["respond_unsupported"]
@@ -34,7 +36,9 @@ flowchart LR
 - Trusted URL seeds live in `data/seeds/trusted_sources.json`.
 - PDF ingestion writes page-level JSON under `data/extracted/json/`.
 - `vector_db.json` uses recursive character chunks with overlap, `thenlper/gte-small` embeddings, normalized vectors, cosine similarity, and preserved citation metadata.
+- Document retrieval expands citizen wording deterministically, fuses dense vector candidates with lexical matches using Reciprocal Rank Fusion, reranks fused candidates, and compresses snippets before citation formatting.
 - If no vector index exists, CouncilQ falls back to deterministic lexical matching over extracted page JSON records.
+- Runtime retrieval events are appended to `data/indexes/retrieval_logs.jsonl` for debugging and benchmark triage.
 - Optional live page fetch is allowlisted and best-effort.
 - Human approval uses ADK `RequestInput` and resumes through explicit approval/rejection routes.
 - Quality gates are retrieval benchmarks, answer evals, and deterministic pytest coverage.

@@ -10,8 +10,9 @@
 - `query_rewrite.py`: deterministic query expansion hooks.
 - `context_compression.py`: extractive context compression helpers.
 - `rerank.py`: reranking interface and deterministic fallback.
-- `retrieval.py`: public RAG pipeline entrypoints.
+- `retrieval.py`: public RAG pipeline entrypoints, query expansion, dense/lexical hybrid search, RRF, reranking, compression, and telemetry hooks.
 - `rag.py`: trusted source retrieval and document fallback logic.
+- `telemetry.py`: JSONL retrieval event logging.
 - `vector_db.py`: local JSON vector index build/search helpers.
 - `document_ingestion.py`: PDF discovery, download, extraction, and chunking.
 - `tools.py`: compatibility wrapper around the RAG pipeline.

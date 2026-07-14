@@ -8,9 +8,12 @@ It uses one retrieval pipeline rather than a multi-skill agent:
 user question
 -> policy/safety check
 -> trusted-source retrieval
--> vector_db.json semantic PDF retrieval when available
--> extracted-page lexical fallback
+-> deterministic query expansion
+-> hybrid dense + lexical retrieval with RRF when indexed documents are available
+-> reranking and extractive context compression
+-> extracted-page lexical fallback when no vector index is available
 -> grounded response with citations
+-> retrieval telemetry in data/indexes/retrieval_logs.jsonl
 ```
 
 ## Current Status
@@ -40,8 +43,10 @@ flowchart LR
   H -->|human_rejected| HR["respond_human_rejected"]
   P -->|continue| R["retrieve_sources"]
   R --> D["trusted source seeds"]
-  D --> V["vector_db.json semantic retrieval"]
-  V --> L["extracted-page lexical fallback"]
+  D --> Q["query expansion"]
+  Q --> HY["hybrid retrieval<br/>(dense + lexical + RRF)"]
+  HY --> K["rerank + compress context"]
+  K --> L["extracted-page lexical fallback"]
   R -->|answered| RA["respond_answered"]
   R -->|clarification_required| RC["respond_clarification_required"]
   R -->|unsupported| RU["respond_unsupported"]
@@ -151,7 +156,7 @@ Build the local vector database after documents have been extracted:
 python scripts\build_vector_db.py
 ```
 
-This writes `data/indexes/vector_db.json`. The index follows the Hugging Face advanced RAG pattern: recursive character chunks with overlap, `thenlper/gte-small` sentence embeddings, normalized vectors, cosine similarity, and top-k retrieval with metadata preserved.
+This writes `data/indexes/vector_db.json`. The index follows the Hugging Face advanced RAG pattern: recursive character chunks with overlap, `thenlper/gte-small` sentence embeddings, normalized vectors, cosine similarity, and metadata-preserving top-k retrieval. At runtime CouncilQ expands the query deterministically, fuses dense vector candidates with lexical matches using Reciprocal Rank Fusion (RRF), reranks the fused candidates, compresses snippets for context, then falls back to extracted-page lexical matching when no vector index is available.
 
 Generated document artifacts and `document_manifest.json` are ignored by git.
 
