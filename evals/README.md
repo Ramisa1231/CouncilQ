@@ -1,20 +1,23 @@
 # Evals
 
-This folder includes the runnable deterministic eval harness (`python -m evals.harness`).
+CouncilQ uses evals for the single advanced RAG pipeline.
 
-Use evals for:
+## Answer Evals
 
-- Agent routing.
-- Skill selection.
-- Tool trajectories.
-- Source grounding.
-- Safety behavior.
-- Refusal and clarification behavior.
+`answer_cases.json` validates route decisions, source citations, policy decisions, and forbidden content.
 
-Skill-specific eval contracts live under each skill folder in:
+Run:
 
-- `evals/input.json`
-- `evals/expected_tools.json`
-- `evals/expected_output.json`
+```powershell
+python -m evals.harness
+```
 
-The harness executes these contracts against the current deterministic MVP behavior.
+## Retrieval Evals
+
+`retrieval_cases.json` validates retrieval quality with `Recall@k`, `MRR@k`, and binary `nDCG@k`.
+
+Run:
+
+```powershell
+python -m scripts.eval_retrieval
+```

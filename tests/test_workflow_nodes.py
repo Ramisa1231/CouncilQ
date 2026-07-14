@@ -2,7 +2,6 @@ import base64
 import json
 
 from app.workflow_nodes import (
-    classify_request,
     normalize_event,
     policy_screen,
     respond_clarification_required,
@@ -11,8 +10,8 @@ from app.workflow_nodes import (
 
 
 def test_clarification_response_includes_source_link():
-    classified = classify_request("I need help in picking my bins. i live in Adelaide")
-    screened = policy_screen(classified.output)
+    normalized = normalize_event("I need help in picking my bins. i live in Adelaide")
+    screened = policy_screen(normalized.output)
     retrieved = retrieve_sources(screened.output)
 
     events = list(respond_clarification_required(retrieved.output))
@@ -44,10 +43,9 @@ def test_normalize_event_accepts_base64_pubsub_data():
     payload = {"data": base64.b64encode(data.encode("utf-8")).decode("ascii")}
 
     normalized = normalize_event(json.dumps(payload))
-    classified = classify_request(normalized.output)
-    screened = policy_screen(classified.output)
+    screened = policy_screen(normalized.output)
     retrieved = retrieve_sources(screened.output)
 
     assert normalized.output["question"] == "I need help in picking my bins. i live in Adelaide"
-    assert classified.actions.route == "council_question"
+    assert screened.actions.route == "continue"
     assert retrieved.actions.route == "clarification_required"

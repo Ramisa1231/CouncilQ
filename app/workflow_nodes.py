@@ -18,8 +18,8 @@ try:
 except ImportError:
     from config import HUMAN_REVIEW_INTERRUPT_ID
 from .policy import check_request
+from .grounding import validate_retrieval_grounding
 from .rag import mentions_outside_city_of_adelaide, search_council_sources
-from .skills import load_skill_registry
 
 
 class CouncilRequest(BaseModel):
@@ -71,29 +71,8 @@ def normalize_event(node_input: Any) -> Event:
     )
 
 
-def classify_request(node_input: Any) -> Event:
-    """Classify the incoming ADK message before policy or retrieval runs."""
-    request = _request_from_input(node_input)
-    question = request.question.strip()
-    lowered = question.lower()
-
-    if any(term in lowered for term in ["what skills", "available skills", "skill registry"]):
-        return Event(
-            output=request.model_dump(),
-            route="skills",
-            state=_state_update("classified_skills", request),
-        )
-
-    request.intent = "council_question"
-    return Event(
-        output=request.model_dump(),
-        route="council_question",
-        state=_state_update("classified_council_question", request),
-    )
-
-
 def policy_screen(node_input: dict[str, Any]) -> Event:
-    """Apply policy_guard before any retrieval step."""
+    """Apply CouncilQ policy before any retrieval step."""
     request = CouncilRequest.model_validate(node_input)
     decision = check_request(
         text=request.question,
@@ -127,7 +106,7 @@ def policy_screen(node_input: dict[str, Any]) -> Event:
 
 
 def retrieve_sources(node_input: dict[str, Any]) -> Event:
-    """Retrieve trusted source metadata for the supported CouncilQ skills."""
+    """Retrieve trusted source metadata through the single RAG pipeline."""
     request = CouncilRequest.model_validate(node_input)
 
     if request.council.lower() != "city of adelaide" or mentions_outside_city_of_adelaide(request.question.lower()):
@@ -142,9 +121,11 @@ def retrieve_sources(node_input: dict[str, Any]) -> Event:
             state=_state_update("retrieval_clarification_required", request),
         )
 
-    retrieval = search_council_sources(
-        request.question,
-        fetch_live_pages=bool(request.metadata.get("fetch_live_pages", False)),
+    retrieval = validate_retrieval_grounding(
+        search_council_sources(
+            request.question,
+            fetch_live_pages=bool(request.metadata.get("fetch_live_pages", False)),
+        )
     )
     request.retrieval = retrieval
     return Event(
@@ -185,21 +166,6 @@ def request_human_approval(ctx: Context, node_input: dict[str, Any]) -> Iterator
     )
 
 
-def respond_with_skills(node_input: dict[str, Any]) -> Iterator[Event]:
-    """Render the skill registry in ADK web."""
-    registry = load_skill_registry()["skills"]
-    lines = [
-        "I have access to these CouncilQ skills for the City of Adelaide:",
-        "",
-    ]
-    for skill_id, skill in registry.items():
-        description = skill["description"] or "No description yet."
-        lines.append(f"- {skill['name']} ({skill_id}): {description}")
-    lines.append("")
-    lines.append("How can I help you with City of Adelaide services today?")
-    yield from _final_text("\n".join(lines), {"status": "skills", "skills": registry})
-
-
 def respond_to_request(node_input: dict[str, Any]) -> Iterator[Event]:
     """Render the final CouncilQ answer for deterministic workflow routes."""
     request = CouncilRequest.model_validate(node_input)
@@ -233,7 +199,7 @@ def respond_to_request(node_input: dict[str, Any]) -> Iterator[Event]:
         return
 
     if status != "answered" or not retrieval.get("sources"):
-        answer = "I could not find a supported CouncilQ skill or trusted source for that question yet."
+        answer = "I could not find trusted City of Adelaide source material for that question yet."
         yield from _final_text(answer, {"status": "unsupported", "policy": request.policy, "sources": []})
         return
 

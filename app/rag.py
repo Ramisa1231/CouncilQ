@@ -13,7 +13,7 @@ from .vector_db import search_vector_database
 
 
 ROOT = Path(__file__).resolve().parents[1]
-WASTE_SOURCES_PATH = ROOT / "skills" / "waste_and_recycling" / "assets" / "sources.json"
+TRUSTED_SOURCES_PATH = ROOT / "data" / "seeds" / "trusted_sources.json"
 DOCUMENT_TEXT_DIRECTORY = ROOT / "data" / "extracted" / "json"
 ALLOWED_SOURCE_DOMAINS = {
     "cityofadelaide.com.au",
@@ -258,7 +258,7 @@ def _search_terms(question: str) -> set[str]:
 
 
 def _matching_waste_sources(lowered_question: str) -> list[dict[str, Any]]:
-    sources = _load_waste_sources()
+    sources = _load_trusted_sources()
     matches = [
         source
         for source in sources
@@ -290,10 +290,10 @@ def _looks_like_bin_collection_question(text: str) -> bool:
 
 
 @lru_cache(maxsize=1)
-def _load_waste_sources() -> list[dict[str, Any]]:
+def _load_trusted_sources() -> list[dict[str, Any]]:
     import json
 
-    payload = json.loads(WASTE_SOURCES_PATH.read_text(encoding="utf-8"))
+    payload = json.loads(TRUSTED_SOURCES_PATH.read_text(encoding="utf-8"))
     return payload["sources"]
 
 

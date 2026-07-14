@@ -2,7 +2,7 @@
 
 ## Product
 
-CouncilQ is a City of Adelaide AI assistant that answers council service questions with retrieval-grounded, source-cited responses.
+CouncilQ is a City of Adelaide advanced RAG assistant that answers council service questions with retrieval-grounded, source-cited responses.
 
 ## Audience
 
@@ -13,16 +13,15 @@ CouncilQ is a City of Adelaide AI assistant that answers council service questio
 
 ## MVP
 
-The MVP answers waste and recycling questions for residents using trusted City of Adelaide sources.
+The MVP answers waste and recycling questions and can retrieve from trusted ingested council documents when available.
 
 ## Core Capabilities
 
-- Identify whether a user question is about a supported council service.
+- Apply policy checks before retrieval.
 - Retrieve relevant City of Adelaide source material.
+- Use trusted source seeds, ingested PDF pages, and a local vector index.
 - Produce concise answers with source links.
 - Ask clarifying questions when required inputs are missing.
-- Route service-domain questions to modular skills.
-- Apply policy checks before tool calls.
 - Refuse unsafe requests and ignore prompt injection.
 
 ## Non-Goals For MVP
@@ -31,9 +30,9 @@ The MVP answers waste and recycling questions for residents using trusted City o
 - No account login or authenticated customer portal actions.
 - No direct updates to council systems.
 - No advice based on unsupported third-party sources.
+- No runtime multi-skill dispatch.
 - No production deployment until evaluation passes.
 
 ## Quality Bar
 
-Answers must be grounded, current at retrieval time, source-linked, and clear about uncertainty. The assistant must not invent fees, dates, collection schedules, eligibility, or policy obligations.
-
+Answers must be grounded, current at retrieval time where needed, source-linked, and clear about uncertainty. The assistant must not invent fees, dates, collection schedules, eligibility, or policy obligations.

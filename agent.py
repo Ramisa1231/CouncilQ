@@ -1,7 +1,6 @@
 from google.adk.workflow import Workflow
 
 from .app.workflow_nodes import (
-    classify_request,
     normalize_event,
     policy_screen,
     respond_answered,
@@ -10,13 +9,12 @@ from .app.workflow_nodes import (
     respond_human_approved,
     respond_human_rejected,
     respond_unsupported,
-    respond_with_skills,
     request_human_approval,
     retrieve_sources,
 )
 
 
-COUNCILQ_DESCRIPTION = "Single-agent safety-first workflow assistant for City of Adelaide services."
+COUNCILQ_DESCRIPTION = "Single advanced RAG assistant for City of Adelaide services."
 
 
 root_agent = Workflow(
@@ -24,14 +22,7 @@ root_agent = Workflow(
     description=COUNCILQ_DESCRIPTION,
     edges=[
         ("START", normalize_event),
-        (normalize_event, {"normalized": classify_request}),
-        (
-            classify_request,
-            {
-                "skills": respond_with_skills,
-                "council_question": policy_screen,
-            },
-        ),
+        (normalize_event, {"normalized": policy_screen}),
         (
             policy_screen,
             {

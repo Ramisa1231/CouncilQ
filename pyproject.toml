@@ -31,6 +31,6 @@ dev = [
 packages = ["app"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "skills"]
+testpaths = ["tests"]
 python_files = ["test_*.py"]
 pythonpath = ["."]

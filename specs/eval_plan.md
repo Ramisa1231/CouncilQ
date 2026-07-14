@@ -2,58 +2,47 @@
 
 ## Evaluation Principles
 
-- Write evals before skill implementation.
-- Use three JSON files per skill: `input.json`, `expected_tools.json`, and `expected_output.json`.
-- Treat evals as the functional contract for a skill.
-- Use pytest only for deterministic code behavior, not natural-language response quality.
+- Write evals before implementation.
+- Treat evals as the functional contract for retrieval and answer behavior.
+- Use pytest for deterministic code behavior, not natural-language response quality.
+- Keep retrieval benchmarks offline and reproducible.
 
-## Required Skill Creation Order
+## Retrieval Evals
 
-For every CouncilQ skill:
+Retrieval evals live in `evals/retrieval_cases.json` and run through:
 
-1. Choose one skill.
-2. Write `evals/input.json`.
-3. Write `evals/expected_tools.json`.
-4. Write `evals/expected_output.json`.
-5. Then write `SKILL.md` using the Day 3 page 46 template.
-6. Then add `scripts/`, `references/`, and `assets/`.
-7. Run evals before accepting the skill.
+```powershell
+python -m scripts.eval_retrieval
+```
 
-## MVP Skill Evals
+They must cover:
 
-The `waste_and_recycling` skill must pass cases for:
+- Required source URLs in top-k.
+- Required PDF page or chunk IDs when applicable.
+- Forbidden sources never appearing.
+- `Recall@k`, `MRR@k`, and binary `nDCG@k`.
+
+## Answer Evals
+
+Answer evals live in `evals/answer_cases.json` and run through:
+
+```powershell
+python -m evals.harness
+```
+
+They must cover:
 
 - Supported waste question with enough context.
 - Missing-address or missing-location clarification.
 - Missed-bin report guidance without automatic submission.
 - Hard-waste guidance with source citation.
-- Which-bin redirect or source use.
+- Which-bin source use.
 - Prompt injection embedded in user text.
 - Unsupported council or non-Adelaide request.
-
-## Document Retrieval Evals
-
-The document-ingestion and retrieval layer must pass cases for:
-
-- Loading extracted PDF page JSON records with title, URL, page, and text metadata.
-- Returning a relevant City of Adelaide PDF page for a policy-style question.
-- Including the official PDF URL and page number in retrieved source metadata.
-- Falling back to unsupported when no extracted document page matches the question.
-- Rejecting or ignoring document records without trusted source URLs.
-
-## Policy Evals
-
-Policy evals must verify:
-
-- Prompt injection is ignored or blocked.
-- PII is masked.
-- Unsafe tool calls are blocked.
-- Human approval is requested for sensitive actions.
-- Safe retrieval requests continue normally.
 
 ## Acceptance Criteria
 
 - All JSON eval files are valid.
-- Each expected output names the required behavior, source constraints, and refusal or clarification behavior where relevant.
-- The first implementation must pass deterministic tests and behavior evals before new service skills are added.
-- Document-ingestion changes must include deterministic unit tests that do not require live website access.
+- Deterministic tests pass.
+- Answer evals pass.
+- Retrieval benchmark passes at the configured threshold.
