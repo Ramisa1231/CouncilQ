@@ -21,3 +21,17 @@ Run:
 ```powershell
 python -m scripts.eval_retrieval
 ```
+
+## Trajectory Evals
+
+`tests/test_trajectory_evals.py` contains deterministic LangChain AgentEvals-style trajectory checks for the ADK workflow. These follow the trajectory-match approach from the LangChain docs: compare the actual workflow sequence with a reference trajectory when expected ordering is known.
+
+- policy blocks unsafe requests before retrieval runs
+- out-of-scope council questions ask for clarification before source retrieval
+- missing-address bin collection questions route to clarification with the official checker source
+
+Run:
+
+```powershell
+pytest tests/test_trajectory_evals.py
+```
