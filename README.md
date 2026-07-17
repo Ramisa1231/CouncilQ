@@ -111,6 +111,7 @@ pip install -e ".[dev]"
 pytest
 python -m evals.harness
 python -m scripts.eval_retrieval
+python -m evals.judge
 ```
 
 ## Answer Evals
@@ -144,6 +145,16 @@ Cases pass only when their `Recall@k` meets `min_recall`. The default is strict 
 ```powershell
 python -m scripts.eval_retrieval --min-recall-default 0.5
 ```
+
+## Judge Evals
+
+Run deterministic LlamaIndex-style response judge evals:
+
+```powershell
+python -m evals.judge
+```
+
+The judge harness reads `evals/judge_cases.json` and checks faithfulness, context relevancy, answer relevancy, and guideline adherence. It is offline by default and does not require a live LLM judge.
 
 ## Offline Council Document Ingestion
 
