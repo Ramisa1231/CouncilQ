@@ -1,5 +1,7 @@
 **/.adk/
 .pytest_cache/
+.pytest-tmp/
+.venv/
 __pycache__/
 *.py[cod]
 .env
