@@ -21,3 +21,17 @@ Run:
 ```powershell
 python -m scripts.eval_retrieval
 ```
+
+## Trajectory Evals
+
+`tests/test_trajectory_evals.py` contains deterministic LangChain-style trajectory checks for the ADK workflow:
+
+- policy blocks unsafe requests before retrieval runs
+- out-of-scope council questions ask for clarification before source retrieval
+- missing-address bin collection questions route to clarification with the official checker source
+
+Run:
+
+```powershell
+pytest tests/test_trajectory_evals.py
+```
