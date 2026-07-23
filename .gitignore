@@ -1,6 +1,10 @@
 **/.adk/
 .pytest_cache/
 .pytest-tmp/
+.pytest-run/
+.pytest-run*/
+.test-deps/
+.benchmark-deps/
 .venv/
 __pycache__/
 *.py[cod]

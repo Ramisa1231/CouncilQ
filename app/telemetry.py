@@ -12,17 +12,24 @@ RETRIEVAL_LOG_FILE = ROOT / "data" / "indexes" / "retrieval_logs.jsonl"
 
 def log_retrieval_event(
     *,
+    trace_id: str,
     query: str,
     status: str,
+    policy_decision: str,
+    latency_ms: float,
     sources: list[dict[str, Any]],
     log_file: Path = RETRIEVAL_LOG_FILE,
 ) -> None:
-    """Append one retrieval event for offline debugging."""
+    """Append one sanitized pipeline event for offline debugging."""
     log_file.parent.mkdir(parents=True, exist_ok=True)
     event = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
+        "trace_id": trace_id,
         "query": query,
         "status": status,
+        "policy_decision": policy_decision,
+        "latency_ms": round(latency_ms, 3),
+        "source_count": len(sources),
         "sources": [
             {
                 "title": source.get("title", ""),

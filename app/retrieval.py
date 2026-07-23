@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+from time import perf_counter
 from typing import Any
+from uuid import uuid4
 
 from .answer import format_answer
 from .context_compression import compress_context
@@ -30,6 +32,8 @@ def answer_question(
     fetch_live_pages: bool = True,
 ) -> dict[str, Any]:
     """Run the single CouncilQ advanced RAG pipeline for a public question."""
+    trace_id = str(uuid4())
+    started_at = perf_counter()
     policy_decision = check_request(
         text=question,
         requested_tool="rag.search",
@@ -38,60 +42,73 @@ def answer_question(
     )
 
     if policy_decision["decision"] == "block":
-        return {
+        return _finalize_result({
             "status": "blocked",
             "policy": policy_decision,
             "answer": "I cannot help with that request because it violates CouncilQ safety policy.",
             "sources": [],
             "live_retrieval": EMPTY_LIVE_RETRIEVAL,
-        }
+        }, trace_id=trace_id, started_at=started_at)
 
     safe_question = policy_decision["sanitized_input"]
     from .rag import mentions_outside_city_of_adelaide
 
     if council.lower() != "city of adelaide" or mentions_outside_city_of_adelaide(safe_question.lower()):
-        return {
+        return _finalize_result({
             "status": "clarification_required",
             "policy": policy_decision,
             "answer": "CouncilQ is currently scoped to the City of Adelaide. Please confirm the property or service is in the City of Adelaide council area before I continue.",
             "sources": [],
             "live_retrieval": EMPTY_LIVE_RETRIEVAL,
-        }
+        }, trace_id=trace_id, started_at=started_at)
 
     retrieval = validate_retrieval_grounding(
         retrieve_documents(safe_question, fetch_live_pages=fetch_live_pages)
     )
-    log_retrieval_event(
-        query=safe_question,
-        status=retrieval["status"],
-        sources=retrieval.get("sources", []),
-    )
     if retrieval["status"] == "clarification_required":
-        return {
+        return _finalize_result({
             "status": "clarification_required",
             "policy": policy_decision,
             "answer": retrieval["message"],
             "sources": retrieval["sources"],
             "live_retrieval": retrieval.get("live_retrieval", EMPTY_LIVE_RETRIEVAL),
-        }
+        }, trace_id=trace_id, started_at=started_at)
 
     if not retrieval["sources"]:
-        return {
+        return _finalize_result({
             "status": "unsupported",
             "policy": policy_decision,
             "answer": "I could not find trusted City of Adelaide source material for that question yet.",
             "sources": [],
             "live_retrieval": retrieval.get("live_retrieval", EMPTY_LIVE_RETRIEVAL),
-        }
+        }, trace_id=trace_id, started_at=started_at)
 
     answer = format_answer(retrieval["message"], retrieval["sources"])
-    return {
+    return _finalize_result({
         "status": "answered",
         "policy": policy_decision,
         "answer": answer,
         "sources": retrieval["sources"],
         "live_retrieval": retrieval.get("live_retrieval", EMPTY_LIVE_RETRIEVAL),
-    }
+    }, trace_id=trace_id, started_at=started_at)
+
+
+def _finalize_result(
+    result: dict[str, Any],
+    *,
+    trace_id: str,
+    started_at: float,
+) -> dict[str, Any]:
+    result["trace_id"] = trace_id
+    log_retrieval_event(
+        trace_id=trace_id,
+        query=result["policy"]["sanitized_input"],
+        status=result["status"],
+        policy_decision=result["policy"]["decision"],
+        latency_ms=(perf_counter() - started_at) * 1000,
+        sources=result.get("sources", []),
+    )
+    return result
 
 
 def retrieve_documents(question: str, *, fetch_live_pages: bool = False) -> dict[str, Any]:

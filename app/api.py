@@ -15,6 +15,7 @@ class AskRequest(BaseModel):
 
 
 class AskResponse(BaseModel):
+    trace_id: str
     status: str
     answer: str
     sources: list[dict[str, str]]
