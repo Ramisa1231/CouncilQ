@@ -82,6 +82,7 @@ def check_request(
         return {
             "decision": "block",
             "reason": "prompt_injection",
+            "detected_prompt_injection": True,
             "sanitized_input": sanitized,
             "requires_approval": False,
             "allowed_tool": False,
@@ -95,6 +96,7 @@ def check_request(
         return {
             "decision": "requires_human_approval",
             "reason": "high_risk_tool",
+            "detected_prompt_injection": bool(injection_hits),
             "sanitized_input": sanitized,
             "requires_approval": True,
             "allowed_tool": False,
@@ -107,6 +109,7 @@ def check_request(
         return {
             "decision": "block",
             "reason": "unauthorized_tool_call",
+            "detected_prompt_injection": bool(injection_hits),
             "sanitized_input": sanitized,
             "requires_approval": False,
             "allowed_tool": False,
@@ -118,6 +121,7 @@ def check_request(
     return {
         "decision": decision,
         "reason": reason,
+        "detected_prompt_injection": bool(injection_hits),
         "sanitized_input": sanitized.strip(),
         "requires_approval": False,
         "allowed_tool": True,

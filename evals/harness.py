@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from app.grounding import validate_retrieval_grounding
 from app.retrieval import answer_question
 
 
@@ -28,10 +29,13 @@ def run_eval_harness(case_filter: str | None = None) -> dict[str, Any]:
 
     results = [_run_case(case) for case in cases]
     passed = sum(1 for result in results if result.passed)
+    contract_metrics = _contract_metrics(cases, results)
     return {
+        "scope": "checked-in deterministic answer-routing fixture",
         "total": len(results),
         "passed": passed,
         "failed": len(results) - passed,
+        "contract_metrics": contract_metrics,
         "results": [
             {
                 "case_id": result.case_id,
@@ -42,6 +46,65 @@ def run_eval_harness(case_filter: str | None = None) -> dict[str, Any]:
             for result in results
         ],
     }
+
+
+def _contract_metrics(
+    cases: list[dict[str, Any]],
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    routing_hits = 0
+    policy_hits = 0
+    policy_total = 0
+    citation_hits = 0
+    citation_total = 0
+    required_hits = 0
+    required_total = 0
+    forbidden_hits = 0
+    forbidden_total = 0
+
+    for case, result in zip(cases, results, strict=True):
+        observed = result.observed
+        routing_hits += observed.get("status") == case.get("expected_status")
+
+        expected_policy = case.get("expected_policy_decision")
+        if expected_policy:
+            policy_total += 1
+            policy_hits += observed.get("policy", {}).get("decision") == expected_policy
+
+        if case.get("expected_status") == "answered":
+            citation_total += 1
+            validated = validate_retrieval_grounding(
+                {
+                    "status": "answered",
+                    "message": "",
+                    "sources": observed.get("sources", []),
+                }
+            )
+            citation_hits += validated.get("status") == "answered"
+
+        answer_text = (observed.get("answer") or "").lower()
+        for required in case.get("required_content", []):
+            required_total += 1
+            required_hits += required.lower() in answer_text
+        for forbidden in case.get("forbidden_content", []):
+            forbidden_total += 1
+            forbidden_hits += forbidden.lower() not in answer_text
+
+    return {
+        "routing_accuracy": _ratio(routing_hits, len(cases)),
+        "policy_decision_accuracy": _ratio(policy_hits, policy_total),
+        "policy_labelled_cases": policy_total,
+        "citation_validity_rate": _ratio(citation_hits, citation_total),
+        "answered_cases": citation_total,
+        "required_content_coverage": _ratio(required_hits, required_total),
+        "required_content_assertions": required_total,
+        "forbidden_content_avoidance": _ratio(forbidden_hits, forbidden_total),
+        "forbidden_content_assertions": forbidden_total,
+    }
+
+
+def _ratio(numerator: int, denominator: int) -> float | None:
+    return numerator / denominator if denominator else None
 
 
 def _run_case(case: dict[str, Any]) -> CaseResult:
@@ -105,6 +168,12 @@ def main() -> int:
         print(json.dumps(summary, indent=2))
     else:
         print(f"Eval results: {summary['passed']}/{summary['total']} passed")
+        metrics = summary["contract_metrics"]
+        print(
+            "Contract metrics: "
+            f"routing={metrics['routing_accuracy']:.3f} "
+            f"citation_validity={metrics['citation_validity_rate']:.3f}"
+        )
         for result in summary["results"]:
             state = "PASS" if result["passed"] else "FAIL"
             print(f"- [{state}] {result['case_id']}")

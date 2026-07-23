@@ -28,6 +28,7 @@ def test_ask_endpoint_returns_structured_response():
     assert body["status"] == "clarification_required"
     assert "address" in body["answer"].lower()
     assert isinstance(body["sources"], list)
+    assert body["trace_id"]
     assert "policy" in body
     assert "live_retrieval" in body
 
@@ -52,6 +53,9 @@ def test_ask_endpoint_emits_retrieval_telemetry(monkeypatch):
     assert events
     assert events[0]["query"] == "When is my bin collected?"
     assert events[0]["status"] == "clarification_required"
+    assert events[0]["trace_id"]
+    assert events[0]["policy_decision"] == "allow"
+    assert events[0]["latency_ms"] >= 0
 
 
 def test_ask_endpoint_can_return_document_page_sources(monkeypatch):

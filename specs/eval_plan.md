@@ -40,9 +40,53 @@ They must cover:
 - Prompt injection embedded in user text.
 - Unsupported council or non-Adelaide request.
 
+The deterministic harness reports:
+
+- Routing accuracy.
+- Policy-decision accuracy where a policy outcome is labelled.
+- Citation-validity rate against CouncilQ's trusted-domain and PDF-page rules.
+- Required-content coverage.
+- Forbidden-content avoidance.
+
+These are contract metrics, not semantic faithfulness or hallucination scores. CouncilQ
+does not claim LLM-as-a-judge results until a reviewed answer dataset and judge rubric
+are checked in.
+
+## Safety Evals
+
+Safety evals live in `evals/policy_cases.json` and run through:
+
+```powershell
+python -m evals.policy_harness
+```
+
+The labelled fixture must include:
+
+- Prompt-injection positives and benign negatives.
+- Mixed safe-intent requests that must be sanitized rather than blocked.
+- Email, Australian mobile number, and Adelaide-address redaction positives.
+- Benign text that must not be redacted.
+
+The harness reports confusion matrices, precision, recall, and false-positive rates for
+prompt-injection detection and PII detection. Metrics describe only the checked-in
+deterministic fixture; they are not production-traffic estimates.
+
+## Telemetry
+
+Runtime retrieval telemetry must include:
+
+- A generated trace ID.
+- Policy decision.
+- Retrieval outcome and trusted-source count.
+- End-to-end pipeline latency.
+
+Telemetry must record sanitized input rather than the original request and must not log
+model prompts, credentials, or full retrieved document text.
+
 ## Acceptance Criteria
 
 - All JSON eval files are valid.
 - Deterministic tests pass.
 - Answer evals pass.
+- Safety evals pass at their checked-in expected decisions.
 - Retrieval benchmark passes at the configured threshold.

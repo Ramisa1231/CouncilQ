@@ -21,5 +21,14 @@ jobs:
       - name: Run deterministic tests
         run: pytest
 
-      - name: Run evaluation harness
+      - name: Run lint checks
+        run: ruff check .
+
+      - name: Run answer evaluation harness
         run: python -m evals.harness
+
+      - name: Run policy evaluation harness
+        run: python -m evals.policy_harness
+
+      - name: Enforce retrieval benchmark
+        run: python -m scripts.eval_retrieval --k 5 --fail-under 1.0
